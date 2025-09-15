@@ -1,7 +1,7 @@
-
 import Foundation
 import RoomPlan
 import Combine
+import simd
 
 @available(iOS 16.0, *)
 @MainActor
@@ -9,6 +9,7 @@ class RoomScanner: NSObject, RoomCaptureSessionDelegate, ObservableObject {
     @Published var scanningState: ScanningState = .notStarted
     @Published var capturedRoom: CapturedRoom?
     @Published var errorMessage: String?
+    @Published var scanProgress: Double = 0.0
 
     var session: RoomCaptureSession?
     
@@ -38,6 +39,14 @@ class RoomScanner: NSObject, RoomCaptureSessionDelegate, ObservableObject {
         session?.stop()
         // The delegate will handle the state change to .completed or .error
     }
+
+    func reset() {
+        stopCapture()
+        scanningState = .notStarted
+        capturedRoom = nil
+        errorMessage = nil
+        scanProgress = 0.0
+    }
     
     // MARK: - RoomCaptureSessionDelegate
     
@@ -51,7 +60,7 @@ class RoomScanner: NSObject, RoomCaptureSessionDelegate, ObservableObject {
     
     func roomCaptureSession(_ session: RoomCaptureSession, didEndWith data: CapturedRoomData, error: Error?) {
         print("🔵 RoomScanner: Capture session ended.")
-        DispatchQueue.main.async {
+        let workItem = DispatchWorkItem {
             if let error = error {
                 print("❌ RoomScanner: Capture failed with error: \(error.localizedDescription)")
                 self.scanningState = .error(error.localizedDescription)
@@ -60,8 +69,10 @@ class RoomScanner: NSObject, RoomCaptureSessionDelegate, ObservableObject {
             }
             
             print("✅ RoomScanner: Capture succeeded.")
-            self.capturedRoom = data.room
+            // For beta: Skip complex room data extraction and just signal completion
+            // TODO: Implement proper room data extraction from CapturedRoomData
             self.scanningState = .completed
         }
+        DispatchQueue.main.async(execute: workItem)
     }
 }

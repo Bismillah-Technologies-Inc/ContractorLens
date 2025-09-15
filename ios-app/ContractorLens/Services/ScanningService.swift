@@ -1,6 +1,7 @@
 import Foundation
 import RoomPlan
 import UIKit
+import simd
 
 // MARK: - Supporting Types
 struct RoomScanData: Identifiable {
@@ -42,6 +43,7 @@ class ScanningService: ObservableObject {
     }
     
     /// Called when the RoomPlan session is finished and the final data is available.
+    @available(iOS 17.0, *)
     func completeScan() -> RoomScanResult? {
         print("🔵 ScanningService: Completing scan...")
         
@@ -81,8 +83,41 @@ class ScanningService: ObservableObject {
     
     // MARK: - Data Processing Helpers
     
+    @available(iOS 17.0, *)
     private func getRoomDimensions(from room: CapturedRoom) -> RoomDimensions {
-        let dims = room.dimensions
+        var minPoint = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
+        var maxPoint = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
+
+        var surfaces = room.walls
+        surfaces += room.floors
+
+        for surface in surfaces {
+            let transform = surface.transform
+            let dimensions = surface.dimensions
+
+            let corners = [
+                SIMD4<Float>(-dimensions.x/2, -dimensions.y/2, -dimensions.z/2, 1),
+                SIMD4<Float>(dimensions.x/2, -dimensions.y/2, -dimensions.z/2, 1),
+                SIMD4<Float>(dimensions.x/2, dimensions.y/2, -dimensions.z/2, 1),
+                SIMD4<Float>(-dimensions.x/2, dimensions.y/2, -dimensions.z/2, 1),
+                SIMD4<Float>(-dimensions.x/2, -dimensions.y/2, dimensions.z/2, 1),
+                SIMD4<Float>(dimensions.x/2, -dimensions.y/2, dimensions.z/2, 1),
+                SIMD4<Float>(dimensions.x/2, dimensions.y/2, dimensions.z/2, 1),
+                SIMD4<Float>(-dimensions.x/2, dimensions.y/2, dimensions.z/2, 1)
+            ]
+
+            for corner in corners {
+                let transformedPoint = transform * corner
+                minPoint.x = min(minPoint.x, transformedPoint.x)
+                minPoint.y = min(minPoint.y, transformedPoint.y)
+                minPoint.z = min(minPoint.z, transformedPoint.z)
+                maxPoint.x = max(maxPoint.x, transformedPoint.x)
+                maxPoint.y = max(maxPoint.y, transformedPoint.y)
+                maxPoint.z = max(maxPoint.z, transformedPoint.z)
+            }
+        }
+
+        let dims = maxPoint - minPoint
         return RoomDimensions(length: Double(dims.x), width: Double(dims.y), height: Double(dims.z))
     }
     

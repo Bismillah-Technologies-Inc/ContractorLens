@@ -112,14 +112,133 @@ struct ProcessedFrame: Identifiable, Codable {
     let id = UUID()
     let imageData: Data
     let timestamp: Date
+    let mimeType: String?  // New: "image/png" or "image/jpeg"
+    let metadata: FrameMetadata?  // New: AR frame metadata
+    let quality: FrameQuality?  // New: Image quality metrics
+    let processingMetadata: ProcessingMetadata?  // New: Processing info
     
     enum CodingKeys: String, CodingKey {
-        case id, imageData, timestamp
+        case id, imageData, timestamp, mimeType, metadata, quality, processingMetadata
     }
     
+    // Backward compatible initializer
     init(imageData: Data, timestamp: Date) {
         self.imageData = imageData
         self.timestamp = timestamp
+        self.mimeType = nil
+        self.metadata = nil
+        self.quality = nil
+        self.processingMetadata = nil
+    }
+    
+    // Enhanced initializer
+    init(imageData: Data,
+         timestamp: Date,
+         mimeType: String? = nil,
+         metadata: FrameMetadata? = nil,
+         quality: FrameQuality? = nil,
+         processingMetadata: ProcessingMetadata? = nil) {
+        self.imageData = imageData
+        self.timestamp = timestamp
+        self.mimeType = mimeType
+        self.metadata = metadata
+        self.quality = quality
+        self.processingMetadata = processingMetadata
+    }
+    
+    // Convenience initializer from EnhancedProcessedFrame
+    init(from enhancedFrame: EnhancedProcessedFrame) {
+        self.imageData = enhancedFrame.imageData
+        self.timestamp = enhancedFrame.timestamp
+        self.mimeType = enhancedFrame.mimeType
+        self.metadata = enhancedFrame.metadata
+        self.quality = enhancedFrame.quality
+        self.processingMetadata = enhancedFrame.processingMetadata
+    }
+}
+
+// MARK: - Frame Quality Assessment
+struct FrameQuality: Codable {
+    let sharpness: Double      // 0.0 to 1.0
+    let brightness: Double     // 0.0 to 1.0
+    let contrast: Double       // 0.0 to 1.0
+    let overall: Double        // 0.0 to 1.0 (weighted average)
+    let isAcceptable: Bool     // Whether frame meets quality threshold
+    
+    init(sharpness: Double, brightness: Double, contrast: Double, threshold: Double = 0.6) {
+        self.sharpness = sharpness
+        self.brightness = brightness
+        self.contrast = contrast
+        // Weighted average: 40% sharpness, 30% brightness, 30% contrast
+        self.overall = (sharpness * 0.4) + (brightness * 0.3) + (contrast * 0.3)
+        self.isAcceptable = overall >= threshold
+    }
+}
+
+// MARK: - AR Frame Metadata
+struct FrameMetadata: Codable {
+    let cameraTransform: CameraTransform
+    let trackingState: String  // "normal", "limited", "notAvailable"
+    let lightingEstimate: Double?  // Ambient intensity if available
+    let cameraIntrinsics: [[Double]]?  // 3x3 camera intrinsic matrix
+    let depthAvailable: Bool
+    let frameTimestamp: Double  // ARFrame timestamp
+    let captureTimestamp: Date
+    
+    init(cameraTransform: simd_float4x4,
+         trackingState: ARCamera.TrackingState,
+         lightingEstimate: ARLightEstimate?,
+         cameraIntrinsics: matrix_float3x3?,
+         depthAvailable: Bool,
+         frameTimestamp: Double,
+         captureTimestamp: Date = Date()) {
+        
+        self.cameraTransform = CameraTransform(matrix: cameraTransform)
+        self.trackingState = trackingState.description
+        self.lightingEstimate = lightingEstimate.map { Double($0.ambientIntensity) }
+        self.depthAvailable = depthAvailable
+        self.frameTimestamp = frameTimestamp
+        self.captureTimestamp = captureTimestamp
+        
+        // Convert camera intrinsics matrix to array format
+        if let intrinsics = cameraIntrinsics {
+            self.cameraIntrinsics = [
+                [Double(intrinsics.columns.0.x), Double(intrinsics.columns.0.y), Double(intrinsics.columns.0.z)],
+                [Double(intrinsics.columns.1.x), Double(intrinsics.columns.1.y), Double(intrinsics.columns.1.z)],
+                [Double(intrinsics.columns.2.x), Double(intrinsics.columns.2.y), Double(intrinsics.columns.2.z)]
+            ]
+        } else {
+            self.cameraIntrinsics = nil
+        }
+    }
+}
+
+// MARK: - Enhanced Processed Frame
+struct EnhancedProcessedFrame: Identifiable, Codable {
+    let id = UUID()
+    let imageData: Data
+    let timestamp: Date
+    let metadata: FrameMetadata?
+    let quality: FrameQuality?
+    let mimeType: String  // "image/png" or "image/jpeg"
+    let processingMetadata: ProcessingMetadata?
+    
+    init(imageData: Data,
+         timestamp: Date,
+         metadata: FrameMetadata? = nil,
+         quality: FrameQuality? = nil,
+         mimeType: String = "image/png",
+         processingMetadata: ProcessingMetadata? = nil) {
+        self.imageData = imageData
+        self.timestamp = timestamp
+        self.metadata = metadata
+        self.quality = quality
+        self.mimeType = mimeType
+        self.processingMetadata = processingMetadata
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, imageData, timestamp, metadata, quality, mimeType, processingMetadata
     }
 }
 

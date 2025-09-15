@@ -28,8 +28,6 @@ class ScanningViewModel: ObservableObject {
                     self?.scanState = .scanning
                 case .completed:
                     self?.scanState = .completed
-                case .processing:
-                    self?.scanState = .scanning
                 case .error(let message):
                     self?.scanState = .error
                     self?.errorMessage = message

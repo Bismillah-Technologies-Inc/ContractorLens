@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct ContentView: View {
@@ -105,10 +104,10 @@ struct ActionCardView: View {
             .frame(maxWidth: .infinity)
             .background(ContractorLensTheme.Colors.surface)
             .cornerRadius(ContractorLensTheme.CornerRadius.lg)
-            .shadow(color: ContractorLensTheme.Shadow.subtleShadow.color,
-                    radius: ContractorLensTheme.Shadow.subtleShadow.radius,
-                    x: ContractorLensTheme.Shadow.subtleShadow.x,
-                    y: ContractorLensTheme.Shadow.subtleShadow.y)
+            .shadow(color: ContractorLensTheme.Shadow.smallShadow.color,
+                    radius: ContractorLensTheme.Shadow.smallShadow.radius,
+                    x: ContractorLensTheme.Shadow.smallShadow.x,
+                    y: ContractorLensTheme.Shadow.smallShadow.y)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -325,4 +324,40 @@ struct FeatureCardView: View {
 
 #Preview {
     ContentView()
+}
+
+struct CreateNewProjectView: View {
+    @Binding var isPresented: Bool
+    @State private var projectName: String = ""
+    
+    // Action to be performed when project is created
+    var onCreate: (String) -> Void
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Name Your Project")
+                    .font(ContractorLensTheme.Typography.title1)
+                    .fontWeight(.bold)
+                
+                TextField("e.g., Kitchen Remodel", text: $projectName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal)
+                
+                Spacer()
+            }
+            .padding(.top, 40)
+            .navigationBarTitle("Create New Project", displayMode: .inline)
+            .navigationBarItems(
+                leading: Button("Cancel") {
+                    isPresented = false
+                },
+                trailing: Button("Create") {
+                    onCreate(projectName)
+                    isPresented = false
+                }
+                .disabled(projectName.isEmpty)
+            )
+        }
+    }
 }
