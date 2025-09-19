@@ -1,221 +1,233 @@
+
 import SwiftUI
 import RoomPlan
 import UIKit
 import ARKit
+import AVFoundation
+import CoreImage
+import simd
 
-@available(iOS 16.0, *)
+@available(iOS 17.0, *)
 struct ScanningView: View {
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var scanningService = ScanningService()
+    @Environment(\.dismiss) private var dismiss
     
-    // This will be updated by the Coordinator
-    @State private var scanCompleted = false
-    @State private var scanResult: RoomScanResult? = nil
+    let projectName: String
+    let onScanComplete: (ScanPackage) -> Void
 
     var body: some View {
         ZStack {
-            RoomCaptureViewRepresentable(scanningService: scanningService) {
-                // This closure is called when the scan is complete
-                self.scanCompleted = true
-                // The service now holds the final result
-                if #available(iOS 17.0, *) {
-                    self.scanResult = scanningService.completeScan()
-                }
-            }
-            .edgesIgnoringSafeArea(.all)
-            
+            RoomCaptureViewRepresentable(scanningService: scanningService, projectName: projectName, onScanComplete: onScanComplete)
+                .ignoresSafeArea()
+
             VStack {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        // Manually stop the session if the user taps Done
-                        scanningService.stopCurrentScan()
-                        dismiss()
-                    }
-                    .padding()
-                    .background(Color.black.opacity(0.5))
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                if let instruction = scanningService.currentInstruction {
+                    InstructionView(text: instruction)
                 }
-                .padding()
                 Spacer()
+                ScanControlsView(
+                    scanState: scanningService.scanState,
+                    onStopScan: { scanningService.stopScanning() },
+                    onReset: { scanningService.resetScan() }
+                )
             }
         }
-        .onAppear(perform: startScan)
-        .sheet(isPresented: $scanCompleted) {
-            if let result = scanResult {
-                // Present the estimate results view upon completion
-                EstimateResultsView(scanResult: result)
-            } else {
-                // Fallback for safety
-                Text("Scan processing failed. Please try again.")
+        .navigationTitle("Scanning: \(projectName)")
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { scanningService.stopScanning() }
+        .onChange(of: scanningService.scanState) { newState in
+            if case .completed = newState {
+                dismiss()
             }
         }
-    }
-    
-    private func startScan() {
-        // The scanning service now manages the RoomScanner
-        _ = scanningService.startNewScan(roomType: .other) 
+        .alert("Scan Failed", isPresented: .constant(scanningService.scanState.isFailed), actions: {
+            Button("Retry") { scanningService.retryScan() }
+            Button("Cancel", role: .cancel) { dismiss() }
+        }, message: {
+            Text(scanningService.scanState.errorDescription)
+        })
     }
 }
 
-
-@available(iOS 16.0, *)
+@available(iOS 17.0, *)
 struct RoomCaptureViewRepresentable: UIViewRepresentable {
-    let scanningService: ScanningService
-    var onScanCompleted: () -> Void
-    
+    @ObservedObject var scanningService: ScanningService
+    let projectName: String
+    let onScanComplete: (ScanPackage) -> Void
+
     func makeUIView(context: Context) -> RoomCaptureView {
         let roomCaptureView = RoomCaptureView(frame: .zero)
-        
-        // The scanning service will handle session setup
-        // The coordinator will handle receiving data from the session.
-        scanningService.roomScanner.session?.delegate = context.coordinator
-        
-        // Pass a reference to the view to the coordinator for snapshots
-        context.coordinator.captureView = roomCaptureView
-        context.coordinator.startSnapshotTimer()
-        
+        roomCaptureView.captureSession.delegate = context.coordinator
+        scanningService.setup(with: roomCaptureView)
+        // Start the scan here to ensure it only happens once.
+        scanningService.startScanning()
         return roomCaptureView
     }
-    
+
     func updateUIView(_ uiView: RoomCaptureView, context: Context) {}
+
+    func makeCoordinator() -> RoomCaptureCoordinator {
+        RoomCaptureCoordinator(scanningService: scanningService, projectName: projectName, onScanComplete: onScanComplete)
+    }
+}
+
+@available(iOS 17.0, *)
+class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureViewDelegate, NSCoding {
+    var scanningService: ScanningService
+    let projectName: String
+    let onScanComplete: @escaping (ScanPackage) -> Void
     
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    private var finalRoom: CapturedRoom?
+    private var capturedFrames: [Data] = []
+    private let ciContext = CIContext()
+    
+    private var frameCaptureTimer: Timer?
+    private weak var arSession: ARSession?
+    private let maxFramesToCapture = 20
+    private let frameCaptureInterval: TimeInterval = 2.0
+
+    init(scanningService: ScanningService, projectName: String, onScanComplete: @escaping (ScanPackage) -> Void) {
+        self.scanningService = scanningService
+        self.projectName = projectName
+        self.onScanComplete = onScanComplete
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    func encode(with coder: NSCoder) {}
+
+    private func startFrameCapture(arSession: ARSession) {
+        self.arSession = arSession
+        frameCaptureTimer?.invalidate()
+        frameCaptureTimer = Timer.scheduledTimer(withTimeInterval: frameCaptureInterval, repeats: true) { [weak self] _ in
+            self?.captureFrame()
+        }
+    }
+
+    private func stopFrameCapture() {
+        frameCaptureTimer?.invalidate()
+        frameCaptureTimer = nil
+    }
+
+    private func captureFrame() {
+        guard let frame = arSession?.currentFrame, capturedFrames.count < maxFramesToCapture else {
+            frameCaptureTimer?.invalidate()
+            return
+        }
+        
+        DispatchQueue.global(qos: .background).async {
+            guard let imageData = self.processARFrameToJPEG(frame) else { return }
+            DispatchQueue.main.async {
+                self.capturedFrames.append(imageData)
+            }
+        }
+    }
+
+    private func processARFrameToJPEG(_ frame: ARFrame) -> Data? {
+        let pixelBuffer = frame.capturedImage
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.8)
+    }
+
+    func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) { self.finalRoom = room }
+    func captureSession(_ session: RoomCaptureSession, didAdd room: CapturedRoom) { self.finalRoom = room }
+    func captureSession(_ session: RoomCaptureSession, didChange room: CapturedRoom) { self.finalRoom = room }
+    func captureSession(_ session: RoomCaptureSession, didRemove room: CapturedRoom) { self.finalRoom = nil }
+    
+    func captureSession(_ session: RoomCaptureSession, didProvide instruction: RoomCaptureSession.Instruction) {
+        DispatchQueue.main.async { self.scanningService.currentInstruction = instruction.description }
+    }
+
+    func captureSession(_ session: RoomCaptureSession, didEndWith data: CapturedRoomData, error: Error?) {
+        stopFrameCapture()
+        DispatchQueue.main.async {
+            self.scanningService.isScanning = false
+            if let error = error { 
+                self.scanningService.scanState = .failed(error); return 
+            }
+            guard let finalRoom = self.finalRoom else { 
+                let missingDataError = NSError(domain: "ContractorLens", code: -1, userInfo: [NSLocalizedDescriptionKey: "Scan completed but final room data is missing."])
+                self.scanningService.scanState = .failed(missingDataError); return
+            }
+            
+            let scanPackage = ScanPackage(projectName: self.projectName, capturedRoom: finalRoom, capturedFrames: self.capturedFrames)
+            self.onScanComplete(scanPackage)
+            self.scanningService.scanState = .completed
+        }
+    }
+
+    func captureSession(_ session: RoomCaptureSession, didFailWith error: Error) {
+        stopFrameCapture()
+        DispatchQueue.main.async {
+            self.scanningService.isScanning = false
+            self.scanningService.scanState = .failed(error)
+        }
     }
     
-    class Coordinator: NSObject, RoomCaptureSessionDelegate {
-        var parent: RoomCaptureViewRepresentable
-        var captureView: RoomCaptureView?
-        var timer: Timer?
-        var arSession: ARSession?
-        var lastCameraTransform: simd_float4x4?
-        var lastCaptureTime: TimeInterval = 0
-        
-        init(_ parent: RoomCaptureViewRepresentable) {
-            self.parent = parent
-            super.init()
-            setupARSession()
-        }
-        
-        private func setupARSession() {
-            arSession = ARSession()
-            let configuration = ARWorldTrackingConfiguration()
-            configuration.planeDetection = [.horizontal, .vertical]
-            configuration.environmentTexturing = .automatic
-            
-            if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
-                configuration.sceneReconstruction = .mesh
-            }
-            
-            arSession?.run(configuration)
-        }
+    func captureView(shouldPresent roomDataForProcessing: CapturedRoomData, error: Error?) -> Bool { 
+        startFrameCapture(arSession: roomDataForProcessing.arSession)
+        return true 
+    }
+    func captureView(didPresent processedResult: CapturedRoom, error: Error?) { self.finalRoom = processedResult }
+}
 
-        // MARK: - Enhanced Snapshot Logic
-        
-        func startSnapshotTimer() {
-            // Use adaptive timing instead of fixed 2-second intervals
-            timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    self?.captureIntelligentFrame()
-                }
-            }
+struct InstructionView: View {
+    let text: String
+    var body: some View {
+        if !text.isEmpty {
+            Text(text)
+                .font(.headline).foregroundColor(.white).padding()
+                .background(Color.black.opacity(0.6)).cornerRadius(12)
+                .padding(.horizontal).multilineTextAlignment(.center)
+                .transition(.opacity.animation(.easeInOut))
         }
+    }
+}
 
-        func stopSnapshotTimer() {
-            timer?.invalidate()
-            timer = nil
-            arSession?.pause()
-        }
+struct ScanControlsView: View {
+    var scanState: ScanState
+    var onStopScan: () -> Void
+    var onReset: () -> Void
 
-        @MainActor
-        func captureIntelligentFrame() {
-            guard let arSession = arSession,
-                  let currentFrame = arSession.currentFrame else {
-                // Fallback to old method if AR session not available
-                takeSnapshot()
-                return
-            }
-            
-            // Check if we should capture this frame (adaptive timing)
-            let currentTime = CACurrentMediaTime()
-            guard currentTime - lastCaptureTime >= 0.5 else { return }
-            
-            // Check camera movement
-            if let lastTransform = lastCameraTransform {
-                let currentTransform = currentFrame.camera.transform
-                let movement = distanceBetweenTransforms(lastTransform, currentTransform)
-                if movement < 0.1 { return } // Not enough movement
-            }
-            
-            // Process AR frame to PNG
-            let ciImage = CIImage(cvPixelBuffer: currentFrame.capturedImage)
-            let context = CIContext()
-            
-            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-                takeSnapshot() // Fallback
-                return
-            }
-            
-            let uiImage = UIImage(cgImage: cgImage)
-            guard let pngData = uiImage.pngData() else {
-                takeSnapshot() // Fallback
-                return
-            }
-            
-            print("📸 Coordinator: Enhanced capture (\(pngData.count) bytes)")
-            
-            // Update tracking
-            lastCameraTransform = currentFrame.camera.transform
-            lastCaptureTime = currentTime
-            
-            // Pass the captured frame to the scanning service
-            parent.scanningService.addCapturedFrame(imageData: pngData)
-        }
-        
-        // Fallback method for when AR session is not available
-        @MainActor
-        @objc func takeSnapshot() {
-            guard let view = captureView else { return }
+    var body: some View {
+        HStack {
+            Button(action: onStopScan) {
+                Text("Done").fontWeight(.bold).frame(maxWidth: .infinity).padding()
+                    .background(scanState == .scanning ? Color.blue : Color.gray)
+                    .foregroundColor(.white).cornerRadius(12)
+            }.disabled(scanState != .scanning)
 
-            let renderer = UIGraphicsImageRenderer(size: view.bounds.size)
-            let image = renderer.image { ctx in
-                view.layer.render(in: ctx.cgContext)
-            }
+            Button(action: onReset) {
+                Text("Reset").fontWeight(.bold).frame(maxWidth: .infinity).padding()
+                    .background(Color.gray).foregroundColor(.white).cornerRadius(12)
+            }.disabled(scanState == .scanning)
+        }.padding()
+    }
+}
 
-            if let jpegData = image.jpegData(compressionQuality: 0.7) {
-                print("📸 Coordinator: Fallback snapshot captured, size: \(jpegData.count) bytes")
-                // Pass the captured frame to the scanning service
-                parent.scanningService.addCapturedFrame(imageData: jpegData)
-            }
-        }
-        
-        private func distanceBetweenTransforms(_ transform1: simd_float4x4, _ transform2: simd_float4x4) -> Float {
-            let translation1 = transform1.columns.3
-            let translation2 = transform2.columns.3
-            
-            let dx = translation1.x - translation2.x
-            let dy = translation1.y - translation2.y
-            let dz = translation1.z - translation2.z
-            
-            return sqrt(dx*dx + dy*dy + dz*dz)
-        }
-        
-        // MARK: - RoomCaptureSessionDelegate
-        
-        func captureSession(_ session: RoomCaptureSession, didEndWith data: CapturedRoomData, error: Error?) {
-            stopSnapshotTimer()
-            
-            if let error = error {
-                print("❌ Error ending capture session: \(error.localizedDescription)")
-                // Handle the error state appropriately
-                return
-            }
-            
-            // The RoomScanner instance (delegate) will also receive this call and store the final room data.
-            // We just need to signal back to the SwiftUI view that we are done.
-            parent.onScanCompleted()
+extension ScanState {
+    var isFailed: Bool {
+        if case .failed = self { return true }
+        return false
+    }
+    var errorDescription: String {
+        if case .failed(let error) = self { return error.localizedDescription }
+        return ""
+    }
+}
+
+@available(iOS 17.0, *)
+extension RoomCaptureSession.Instruction {
+    var description: String {
+        switch self {
+        case .moveCloseToWall: return "Move closer to a wall."
+        case .moveAwayFromWall: return "Move away from the wall."
+        case .slowDown: return "Move more slowly."
+        case .turnOnLight: return "Turn on more lights."
+        case .normal: return ""
+        case .lowTexture: return "Point at a wall with more texture."
+        @unknown default: return "Scanning..."
         }
     }
 }
