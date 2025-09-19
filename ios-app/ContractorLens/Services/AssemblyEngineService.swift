@@ -1,23 +1,24 @@
+
 import Foundation
 import Combine
+import RoomPlan
+import OSLog
 
+@MainActor
 class AssemblyEngineService: ObservableObject {
-    @Published var assemblies: [Assembly] = []
-    @Published var isLoading = false
-    @Published var isProcessing = false
+    
     @Published var lastEstimate: Estimate?
     @Published var error: ServiceError?
-    @Published var errorMessage: String?
     
-    private let baseURL = "http://localhost:3000/api/v1"  // Backend endpoint
     private let session = URLSession.shared
-    var cancellables = Set<AnyCancellable>()
-    
+    private var cancellables = Set<AnyCancellable>()
+    private let logger = Logger(subsystem: "com.contractorlens.app", category: "AssemblyEngineService")
+
     enum ServiceError: LocalizedError, Identifiable {
         case networkError(String)
         case serverError(Int, String)
-        case decodingError
-        case invalidData
+        case decodingError(String)
+        case invalidData(String)
         
         var id: String { localizedDescription }
         
@@ -27,236 +28,140 @@ class AssemblyEngineService: ObservableObject {
                 return "Network Error: \(message)"
             case .serverError(let code, let message):
                 return "Server Error (\(code)): \(message)"
-            case .decodingError:
-                return "Failed to process server response"
-            case .invalidData:
-                return "Invalid scan data"
+            case .decodingError(let message):
+                return "Failed to process server response: \(message)"
+            case .invalidData(let message):
+                return "Invalid data provided: \(message)"
             }
         }
     }
     
-    func generateEstimate(from scanResult: RoomScanResult, 
-                         userPreferences: UserPreferences,
-                         location: LocationData) -> AnyPublisher<Estimate, ServiceError> {
+    func generateEnhancedEstimate(
+        scanPackage: ScanPackage,
+        roomType: RoomType,
+        userPreferences: UserPreferences,
+        location: LocationData
+    ) -> AnyPublisher<Estimate, ServiceError> {
         
-        guard let url = URL(string: "\(baseURL)/estimates") else {
-            return Fail(error: ServiceError.invalidData)
+        let urlString = "\(Configuration.baseURL)/analysis/enhanced-estimate"
+        guard let url = URL(string: urlString) else {
+            self.logger.error("Invalid URL: \(urlString)")
+            return Fail(error: ServiceError.invalidData("The server URL is invalid."))
                 .eraseToAnyPublisher()
         }
         
-        let estimateRequest = EstimateRequest(
-            roomData: scanResult,
-            userPreferences: userPreferences,
-            location: location
-        )
+        self.logger.info("Starting enhanced estimate generation for project: \(scanPackage.projectName)")
+        
+        let requestPayload: EnhancedEstimateRequest
+        do {
+            requestPayload = try translateScanPackage(scanPackage, roomType: roomType, userPreferences: userPreferences, location: location)
+        } catch let error as ServiceError {
+            self.logger.error("Failed to translate ScanPackage: \(error.localizedDescription)")
+            return Fail(error: error).eraseToAnyPublisher()
+        } catch {
+            self.logger.error("An unexpected error occurred during payload creation: \(error.localizedDescription)")
+            return Fail(error: ServiceError.invalidData("Could not prepare data for the server.")).eraseToAnyPublisher()
+        }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            request.httpBody = try JSONEncoder().encode(estimateRequest)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            request.httpBody = try encoder.encode(requestPayload)
         } catch {
-            return Fail(error: ServiceError.invalidData)
-                .eraseToAnyPublisher()
+            self.logger.error("Failed to encode request payload: \(error.localizedDescription)")
+            return Fail(error: ServiceError.invalidData("Failed to encode request data.")).eraseToAnyPublisher()
         }
         
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response in
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    throw ServiceError.networkError("Invalid response")
+                    throw ServiceError.networkError("Invalid response from server.")
                 }
                 
-                if httpResponse.statusCode >= 400 {
-                    let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                self.logger.info("Received HTTP status code: \(httpResponse.statusCode)")
+                
+                if (200..<300).contains(httpResponse.statusCode) {
+                    return data
+                } else {
+                    let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+                    self.logger.error("Server returned error: \(httpResponse.statusCode) - \(errorMessage)")
                     throw ServiceError.serverError(httpResponse.statusCode, errorMessage)
                 }
-                
-                return data
             }
             .decode(type: Estimate.self, decoder: JSONDecoder())
-            .mapError { error in
-                if error is DecodingError {
-                    return ServiceError.decodingError
-                } else if let serviceError = error as? ServiceError {
+            .mapError { error -> ServiceError in
+                if let serviceError = error as? ServiceError {
                     return serviceError
+                } else if let decodingError = error as? DecodingError {
+                    self.logger.error("Decoding error: \(decodingError.localizedDescription)")
+                    return .decodingError(decodingError.localizedDescription)
                 } else {
-                    return ServiceError.networkError(error.localizedDescription)
+                    self.logger.error("Network request failed: \(error.localizedDescription)")
+                    return .networkError(error.localizedDescription)
                 }
             }
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
     
-    func submitGeminiAnalysis(frames: [ProcessedFrame], 
-                             roomType: RoomType,
-                             dimensions: RoomDimensions) -> AnyPublisher<GeminiAnalysisResponse, ServiceError> {
+    private func translateScanPackage(
+        _ scanPackage: ScanPackage,
+        roomType: RoomType,
+        userPreferences: UserPreferences,
+        location: LocationData
+    ) throws -> EnhancedEstimateRequest {
         
-        guard let url = URL(string: "\(baseURL)/analysis") else {
-            return Fail(error: ServiceError.invalidData)
-                .eraseToAnyPublisher()
+        let framePayloads = scanPackage.capturedFrames.map {
+            FramePayload(imageData: $0.base64EncodedString(), timestamp: ISO8601DateFormatter().string(from: Date()))
         }
         
-        let encodedFrames = frames.map { $0.imageData.base64EncodedString() }
-        let roomContext = RoomContext(type: roomType, dimensions: dimensions, surfaces: []) // Surfaces are not available in this function
-
-        let analysisRequest = GeminiAnalysisRequest(
-            images: encodedFrames,
-            roomContext: roomContext,
-            analysisLevel: .standard
+        guard !framePayloads.isEmpty else {
+            throw ServiceError.invalidData("Scan package contains no image frames.")
+        }
+        
+        let dimensions = calculateDimensions(from: scanPackage.capturedRoom)
+        
+        let dimensionsPayload = RoomDimensionsPayload(length: dimensions.length, width: dimensions.width, height: dimensions.height)
+        let locationPayload = LocationPayload(zip: location.zipCode)
+        let userPrefsPayload = UserPreferencesPayload(qualityTier: userPreferences.qualityTier, budget: nil)
+        
+        return EnhancedEstimateRequest(
+            frames: framePayloads,
+            roomType: roomType.rawValue,
+            dimensions: dimensionsPayload,
+            location: locationPayload,
+            userPreferences: userPrefsPayload
         )
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            request.httpBody = try JSONEncoder().encode(analysisRequest)
-        } catch {
-            return Fail(error: ServiceError.invalidData)
-                .eraseToAnyPublisher()
+    }
+
+    private func calculateDimensions(from room: CapturedRoom) -> (length: Double, width: Double, height: Double) {
+        let allSurfaces = room.walls + room.floors
+        guard !allSurfaces.isEmpty else { return (0, 0, 0) }
+
+        var minPoint = SIMD3<Float>(repeating: .greatestFiniteMagnitude)
+        var maxPoint = SIMD3<Float>(repeating: -.greatestFiniteMagnitude)
+
+        for surface in allSurfaces {
+            let transform = surface.transform
+            let dimensions = surface.dimensions
+
+            let halfDimensions = dimensions / 2.0
+            let center = SIMD3<Float>(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z)
+
+            minPoint.x = min(minPoint.x, center.x - halfDimensions.x)
+            minPoint.y = min(minPoint.y, center.y - halfDimensions.y)
+            minPoint.z = min(minPoint.z, center.z - halfDimensions.z)
+
+            maxPoint.x = max(maxPoint.x, center.x + halfDimensions.x)
+            maxPoint.y = max(maxPoint.y, center.y + halfDimensions.y)
+            maxPoint.z = max(maxPoint.z, center.z + halfDimensions.z)
         }
-        
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response in
-                guard let httpResponse = response as? HTTPURLResponse,
-                      httpResponse.statusCode < 400 else {
-                    throw ServiceError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0, "Analysis failed")
-                }
-                return data
-            }
-            .decode(type: GeminiAnalysisResponse.self, decoder: JSONDecoder())
-            .mapError { error in
-                error is DecodingError ? ServiceError.decodingError : ServiceError.networkError(error.localizedDescription)
-            }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
-    
-    func processRoom(_ room: Room) -> AnyPublisher<[Assembly], Error> {
-        isLoading = true
-        errorMessage = nil
-        
-        return Future { [weak self] promise in
-            DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 2) {
-                DispatchQueue.main.async {
-                    self?.isLoading = false
-                    
-                    let mockAssemblies = self?.generateMockAssemblies(for: room) ?? []
-                    self?.assemblies = mockAssemblies
-                    promise(.success(mockAssemblies))
-                }
-            }
-        }
-        .eraseToAnyPublisher()
-    }
-    
-    private func generateMockAssemblies(for room: Room) -> [Assembly] {
-        let floorArea = room.dimensions.area
-        let wallArea = room.surfaces.filter { $0.type == .wall }.reduce(0) { $0 + $1.area }
-        
-        var flooringAssembly = Assembly(name: "Hardwood Flooring Installation", room: room)
-        flooringAssembly.components = [
-            AssemblyComponent(
-                name: "Hardwood Flooring",
-                quantity: floorArea,
-                unit: "sq ft",
-                unitCost: 8.50,
-                laborHoursPerUnit: 0.5,
-                laborRate: 45.0
-            ),
-            AssemblyComponent(
-                name: "Underlayment",
-                quantity: floorArea,
-                unit: "sq ft",
-                unitCost: 1.25
-            )
-        ]
-        
-        var paintingAssembly = Assembly(name: "Interior Painting", room: room)
-        paintingAssembly.components = [
-            AssemblyComponent(
-                name: "Premium Paint",
-                quantity: wallArea / 350,
-                unit: "gallon",
-                unitCost: 65.0
-            ),
-            AssemblyComponent(
-                name: "Primer",
-                quantity: wallArea / 400,
-                unit: "gallon",
-                unitCost: 45.0
-            ),
-            AssemblyComponent(
-                name: "Painting Labor",
-                quantity: wallArea,
-                unit: "sq ft",
-                unitCost: 0.0,
-                laborHoursPerUnit: 0.02,
-                laborRate: 42.0
-            )
-        ]
-        
-        return [flooringAssembly, paintingAssembly]
-    }
-    
-    func calculateTotalCost(for assemblies: [Assembly]) -> Double {
-        return assemblies.reduce(0) { $0 + $1.totalCost }
-    }
-    
-    func exportAssemblyData(_ assembly: Assembly) -> Data? {
-        do {
-            return try JSONEncoder().encode(assembly)
-        } catch {
-            errorMessage = "Failed to export assembly data: \(error.localizedDescription)"
-            return nil
-        }
+
+        let size = maxPoint - minPoint
+        return (length: Double(size.x), width: Double(size.z), height: Double(size.y))
     }
 }
-
-// MARK: - Request/Response Models
-
-struct EstimateRequest: Codable {
-    let roomData: RoomScanResult
-    let userPreferences: UserPreferences
-    let location: LocationData
-}
-
-struct GeminiAnalysisRequest: Codable {
-    let images: [String]
-    let roomContext: RoomContext
-    let analysisLevel: AnalysisLevel
-}
-
-struct GeminiAnalysisResponse: Codable {
-    let surfaces: [DetectedSurface]
-    let materials: [DetectedMaterial]
-    let confidence: Double
-    let recommendedQualityTier: String
-}
-
-struct RoomContext: Codable {
-    let type: RoomType
-    let dimensions: RoomDimensions
-    let surfaces: [Surface]
-}
-
-enum AnalysisLevel: String, Codable {
-    case basic, standard, professional
-}
-
-struct DetectedSurface: Codable {
-    let type: String
-    let area: Double
-    let condition: String
-}
-
-struct DetectedMaterial: Codable {
-    let name: String
-    let confidence: Double
-    let area: Double
-}
-
-
-
-
