@@ -11,6 +11,9 @@ struct ScanningView: View {
     // This will be updated by the Coordinator
     @State private var scanCompleted = false
     @State private var scanResult: RoomScanResult? = nil
+    
+    // Optional closure to handle scan result externally
+    var onScanCompleted: ((RoomScanResult) -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -40,13 +43,21 @@ struct ScanningView: View {
             }
         }
         .onAppear(perform: startScan)
+        .onChange(of: scanCompleted) { completed in
+            if completed, let result = scanResult {
+                if let onScanCompleted = onScanCompleted {
+                    onScanCompleted(result)
+                    dismiss()
+                }
+            }
+        }
         .sheet(isPresented: $scanCompleted) {
-            if let result = scanResult {
-                // Present the estimate results view upon completion
-                EstimateResultsView(scanResult: result)
-            } else {
-                // Fallback for safety
-                Text("Scan processing failed. Please try again.")
+            if onScanCompleted == nil {
+                if let result = scanResult {
+                    EstimateResultsView(scanResult: result)
+                } else {
+                    Text("Scan processing failed. Please try again.")
+                }
             }
         }
     }

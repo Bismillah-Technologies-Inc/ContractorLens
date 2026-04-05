@@ -1,0 +1,165 @@
+[
+  {
+    "scope": "kitchen remodel",
+    "lineItems": [
+      {
+        "trade": "demo",
+        "description": "Demo existing kitchen",
+        "unit": "sq ft",
+        "quantityRule": "floorArea",
+        "materialCostPerUnit": 0,
+        "laborHoursPerUnit": 0.1,
+        "laborRate": 65
+      },
+      {
+        "trade": "drywall",
+        "description": "Drywall installation",
+        "unit": "sq ft",
+        "quantityRule": "wallArea",
+        "materialCostPerUnit": 1.5,
+        "laborHoursPerUnit": 0.05,
+        "laborRate": 65
+      },
+      {
+        "trade": "paint",
+        "description": "Paint walls and ceiling",
+        "unit": "sq ft",
+        "quantityRule": "wallArea",
+        "materialCostPerUnit": 0.75,
+        "laborHoursPerUnit": 0.02,
+        "laborRate": 65
+      },
+      {
+        "trade": "flooring",
+        "description": "Flooring installation",
+        "unit": "sq ft",
+        "quantityRule": "floorArea",
+        "materialCostPerUnit": 4.0,
+        "laborHoursPerUnit": 0.1,
+        "laborRate": 65
+      },
+      {
+        "trade": "cabinets",
+        "description": "Cabinet installation",
+        "unit": "linear ft",
+        "quantityRule": "cabinetLinearFeet",
+        "materialCostPerUnit": 150,
+        "laborHoursPerUnit": 2,
+        "laborRate": 65
+      },
+      {
+        "trade": "countertops",
+        "description": "Countertop installation",
+        "unit": "sq ft",
+        "quantityRule": "countertopArea",
+        "materialCostPerUnit": 50,
+        "laborHoursPerUnit": 1,
+        "laborRate": 65
+      },
+      {
+        "trade": "plumbing",
+        "description": "Plumbing rough-in and fixtures",
+        "unit": "each",
+        "quantityRule": "plumbingFixtures",
+        "materialCostPerUnit": 500,
+        "laborHoursPerUnit": 8,
+        "laborRate": 85
+      },
+      {
+        "trade": "electrical",
+        "description": "Electrical rough-in and fixtures",
+        "unit": "each",
+        "quantityRule": "electricalFixtures",
+        "materialCostPerUnit": 300,
+        "laborHoursPerUnit": 6,
+        "laborRate": 85
+      },
+      {
+        "trade": "fixtures",
+        "description": "Sink, faucet, disposal",
+        "unit": "each",
+        "quantityRule": "kitchenFixtures",
+        "materialCostPerUnit": 800,
+        "laborHoursPerUnit": 4,
+        "laborRate": 85
+      },
+      {
+        "trade": "trim",
+        "description": "Baseboard and trim",
+        "unit": "linear ft",
+        "quantityRule": "perimeter",
+        "materialCostPerUnit": 3,
+        "laborHoursPerUnit": 0.1,
+        "laborRate": 65
+      }
+    ]
+  },
+  {
+    "scope": "bathroom remodel",
+    "lineItems": [
+      {
+        "trade": "demo",
+        "description": "Demo existing bathroom",
+        "unit": "sq ft",
+        "quantityRule": "floorArea",
+        "materialCostPerUnit": 0,
+        "laborHoursPerUnit": 0.15,
+        "laborRate": 65
+      },
+      {
+        "trade": "drywall",
+        "description": "Drywall installation",
+        "unit": "sq ft",
+        "quantityRule": "wallArea",
+        "materialCostPerUnit": 1.5,
+        "laborHoursPerUnit": 0.05,
+        "laborRate": 65
+      },
+      {
+        "trade": "tile",
+        "description": "Tile installation (floor and walls)",
+        "unit": "sq ft",
+        "quantityRule": "tileArea",
+        "materialCostPerUnit": 6,
+        "laborHoursPerUnit": 0.2,
+        "laborRate": 75
+      },
+      {
+        "trade": "plumbing",
+        "description": "Plumbing rough-in and fixtures",
+        "unit": "each",
+        "quantityRule": "bathroomPlumbingFixtures",
+        "materialCostPerUnit": 700,
+        "laborHoursPerUnit": 10,
+        "laborRate": 85
+      },
+      {
+        "trade": "vanity",
+        "description": "Vanity and mirror",
+        "unit": "each",
+        "quantityRule": "vanityCount",
+        "materialCostPerUnit": 600,
+        "laborHoursPerUnit": 3,
+        "laborRate": 65
+      },
+      {
+        "trade": "electrical",
+        "description": "Electrical rough-in and fixtures",
+        "unit": "each",
+        "quantityRule": "bathroomElectricalFixtures",
+        "materialCostPerUnit": 400,
+        "laborHoursPerUnit": 5,
+        "laborRate": 85
+      },
+      {
+        "trade": "trim",
+        "description": "Baseboard and trim",
+        "unit": "linear ft",
+        "quantityRule": "perimeter",
+        "materialCostPerUnit": 3,
+        "laborHoursPerUnit": 0.1,
+        "laborRate": 65
+      }
+    ]
+  }
+]
