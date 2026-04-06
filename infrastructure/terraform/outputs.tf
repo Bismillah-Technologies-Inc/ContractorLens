@@ -1,17 +1,17 @@
-# ContractorLens Infrastructure Outputs
+# ContractorLens Infrastructure Outputs - VPC Module Outputs
 output "vpc_id" {
   description = "ID of the VPC"
-  value       = aws_vpc.main.id
+  value       = module.vpc.vpc_id
 }
 
 output "public_subnet_ids" {
   description = "IDs of the public subnets"
-  value       = aws_subnet.public[*].id
+  value       = module.vpc.public_subnet_ids
 }
 
 output "private_subnet_ids" {
   description = "IDs of the private subnets"
-  value       = aws_subnet.private[*].id
+  value       = module.vpc.private_subnet_ids
 }
 
 output "load_balancer_dns_name" {
@@ -31,18 +31,18 @@ output "load_balancer_arn" {
 
 output "database_endpoint" {
   description = "RDS instance endpoint"
-  value       = aws_db_instance.main.endpoint
+  value       = module.rds.db_endpoint
   sensitive   = true
 }
 
 output "database_port" {
   description = "RDS instance port"
-  value       = aws_db_instance.main.port
+  value       = module.rds.db_port
 }
 
 output "database_name" {
   description = "RDS database name"
-  value       = aws_db_instance.main.db_name
+  value       = module.rds.db_name
 }
 
 output "ecs_cluster_id" {
@@ -67,23 +67,23 @@ output "cloudwatch_log_group_name" {
 
 output "nat_gateway_ip" {
   description = "Elastic IP address of NAT Gateway"
-  value       = aws_eip.nat.public_ip
+  value       = module.vpc.nat_gateway_ip
 }
 
 # Security Groups
 output "alb_security_group_id" {
   description = "ID of the ALB security group"
-  value       = aws_security_group.alb.id
+  value       = module.vpc.alb_security_group_id
 }
 
 output "app_security_group_id" {
   description = "ID of the application security group"
-  value       = aws_security_group.app.id
+  value       = module.vpc.app_security_group_id
 }
 
 output "db_security_group_id" {
   description = "ID of the database security group"
-  value       = aws_security_group.db.id
+  value       = module.vpc.rds_security_group_id
 }
 
 # IAM Roles
@@ -97,15 +97,15 @@ output "ecs_task_role_arn" {
   value       = aws_iam_role.ecs_task_role.arn
 }
 
-# Parameter Store ARNs (for reference)
-output "parameter_store_arns" {
-  description = "ARNs of Parameter Store secrets"
+# Secrets Manager and Parameter Store ARNs (for reference)
+output "secrets_manager_arns" {
+  description = "ARNs of Secrets Manager and Parameter Store secrets"
   value = {
-    db_password           = aws_ssm_parameter.db_password.arn
+    db_credentials        = module.rds.secrets_manager_arn
     firebase_project_id   = aws_ssm_parameter.firebase_project_id.arn
     firebase_private_key  = aws_ssm_parameter.firebase_private_key.arn
     firebase_client_email = aws_ssm_parameter.firebase_client_email.arn
-    gemini_api_key       = aws_ssm_parameter.gemini_api_key.arn
+    gemini_api_key        = aws_ssm_parameter.gemini_api_key.arn
   }
   sensitive = true
 }

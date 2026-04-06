@@ -1,0 +1,45 @@
+# ContractorLens Development Environment Example Configuration
+# Use variables appropriate for development/testing
+
+# AWS Configuration
+aws_region  = "us-west-2"
+environment = "dev"
+
+# Project Configuration
+project_name = "contractorlens-dev"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = 2
+
+# Database Configuration (DEV)
+db_instance_class = "db.t3.micro"
+db_allocated_storage = 20
+db_max_allocated_storage = 100
+backup_retention_period = 7
+multi_az = false
+performance_insights_enabled = false
+monitoring_interval = 0
+deletion_protection = false
+db_name = "contractorlens"
+db_username = "contractorlens_admin"
+db_password = "dev-password-1234" # Change this in production!
+
+# ECS Configuration (DEV - smaller instance sizes)
+ecs_cpu = 256
+ecs_memory = 512
+ecs_desired_count = 1
+ecs_min_capacity = 1
+ecs_max_capacity = 3
+
+# Application Configuration
+ecr_repository_url = "YOUR_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/contractorlens-dev"
+
+# Security Configuration
+enable_deletion_protection = false  # For easier cleanup in dev
+
+# Secrets (use SSM Parameter Store or Secrets Manager in production)
+firebase_project_id   = "your-firebase-project-id-dev"
+firebase_private_key  = "your-firebase-private-key-dev"
+firebase_client_email = "firebase-dev@your-project.iam.gserviceaccount.com"
+gemini_api_key = "your-gemini-api-key-dev"

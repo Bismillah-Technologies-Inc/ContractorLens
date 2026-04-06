@@ -24,11 +24,41 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
+variable "availability_zones" {
+  description = "Number of availability zones to use"
+  type        = number
+  default     = 2
+}
+
 # Database Configuration
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
   default     = "db.t3.medium"
+}
+
+variable "multi_az" {
+  description = "Enable multi-AZ deployment for high availability"
+  type        = bool
+  default     = false
+}
+
+variable "performance_insights_enabled" {
+  description = "Enable RDS Performance Insights"
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_interval" {
+  description = "Enhanced monitoring interval in seconds (0 = disabled)"
+  type        = number
+  default     = 0
+}
+
+variable "deletion_protection" {
+  description = "Enable deletion protection for RDS"
+  type        = bool
+  default     = true
 }
 
 variable "db_allocated_storage" {
