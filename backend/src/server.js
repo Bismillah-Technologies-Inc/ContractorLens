@@ -6,6 +6,9 @@ require('dotenv').config();
 // Import routes
 const estimatesRoutes = require('./routes/estimates');
 const analysisRoutes = require('./routes/analysis');
+const authRoutes = require('./routes/auth');
+const projectsRoutes = require('./routes/projects');
+const { authenticate } = require('./middleware/auth');
 
 // Import database connection (this will test the connection)
 const db = require('./config/database');
@@ -95,8 +98,29 @@ app.get('/api/v1', (req, res) => {
 });
 
 // Mount routes
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/v1')) {
+    return next();
+  }
+
+  const publicPaths = [
+    '/api/v1',
+    '/api/v1/',
+    '/api/v1/analysis/health',
+    '/api/v1/webhooks/stripe'
+  ];
+  
+  if (publicPaths.includes(req.path)) {
+    return next();
+  }
+  
+  return authenticate(req, res, next);
+});
+
 app.use(estimatesRoutes);
 app.use(analysisRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/projects', projectsRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

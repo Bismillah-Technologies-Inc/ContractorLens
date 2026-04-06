@@ -6,6 +6,10 @@ const { auth } = require('../config/firebase');
  */
 const authenticate = async (req, res, next) => {
   try {
+    if (req.user) {
+      return next();
+    }
+    
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
