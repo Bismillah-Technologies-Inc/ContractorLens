@@ -1,34 +1,8 @@
 # ContractorLens Production Infrastructure - AWS Terraform Configuration
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-  
-  # Backend configuration for state management (uncomment in production)
-  # backend "s3" {
-  #   bucket = "contractorlens-terraform-state"
-  #   key    = "production/terraform.tfstate"
-  #   region = "us-west-2"
-  # }
-}
+# Terraform and provider configurations moved to versions.tf
 
-# Configure AWS Provider
-provider "aws" {
-  region = var.aws_region
-  
-  default_tags {
-    tags = {
-      Environment   = var.environment
-      Project       = "ContractorLens"
-      ManagedBy     = "Terraform"
-      CostCenter    = "Production"
-    }
-  }
-}
+# AWS Provider configuration - moved to versions.tf
+# Data sources and resources continue below...
 
 # Data sources
 data "aws_availability_zones" "available" {
@@ -245,9 +219,10 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = [aws_security_group.db.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
 
-  backup_retention_period = 30
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "Sun:04:00-Sun:05:00"
+  multi_az               = var.multi_az
+  backup_retention_period = var.backup_retention_period
+  backup_window          = var.backup_window
+  maintenance_window     = var.maintenance_window
 
   skip_final_snapshot = false
   final_snapshot_identifier = "${var.project_name}-db-final-snapshot"
