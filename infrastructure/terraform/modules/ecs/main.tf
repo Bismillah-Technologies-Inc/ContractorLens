@@ -59,7 +59,19 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
           "secretsmanager:DescribeSecret"
         ]
         Effect   = "Allow"
-        Resource = var.secrets_manager_arns
+        Resource = concat(
+          var.secrets_manager_arns,
+          # Include the specific secret ARNs from variables
+          var.db_password_secret_arn != "" ? [var.db_password_secret_arn] : [],
+          var.db_user_secret_arn != "" ? [var.db_user_secret_arn] : [],
+          var.db_host_secret_arn != "" ? [var.db_host_secret_arn] : [],
+          var.db_port_secret_arn != "" ? [var.db_port_secret_arn] : [],
+          var.db_name_secret_arn != "" ? [var.db_name_secret_arn] : [],
+          var.stripe_secret_key_secret_arn != "" ? [var.stripe_secret_key_secret_arn] : [],
+          var.stripe_webhook_secret_arn != "" ? [var.stripe_webhook_secret_arn] : [],
+          var.firebase_project_id_secret_arn != "" ? [var.firebase_project_id_secret_arn] : [],
+          var.firebase_private_key_secret_arn != "" ? [var.firebase_private_key_secret_arn] : []
+        )
       },
       {
         Action = [
@@ -178,18 +190,6 @@ resource "aws_ecs_task_definition" "app" {
             value = var.environment
           },
           {
-            name  = "DB_HOST"
-            value = var.db_host
-          },
-          {
-            name  = "DB_PORT"
-            value = var.db_port
-          },
-          {
-            name  = "DB_NAME"
-            value = var.db_name
-          },
-          {
             name  = "S3_BUCKET_NAME"
             value = var.s3_bucket_name
           },
@@ -198,6 +198,25 @@ resource "aws_ecs_task_definition" "app" {
             value = var.cloudfront_url
           }
         ],
+        # Only include DB_HOST, DB_PORT, DB_NAME as environment variables if not using secrets
+        var.db_host_secret_arn == "" && var.db_host != "" ? [
+          {
+            name  = "DB_HOST"
+            value = var.db_host
+          }
+        ] : [],
+        var.db_port_secret_arn == "" && var.db_port != "" ? [
+          {
+            name  = "DB_PORT"
+            value = var.db_port
+          }
+        ] : [],
+        var.db_name_secret_arn == "" && var.db_name != "" ? [
+          {
+            name  = "DB_NAME"
+            value = var.db_name
+          }
+        ] : [],
         var.additional_environment_variables
       )
       
@@ -228,6 +247,25 @@ resource "aws_ecs_task_definition" "app" {
             valueFrom = var.firebase_private_key_secret_arn
           }
         ],
+        # Conditionally add DB_HOST, DB_PORT, DB_NAME as secrets if ARNs are provided
+        var.db_host_secret_arn != "" ? [
+          {
+            name      = "DB_HOST"
+            valueFrom = var.db_host_secret_arn
+          }
+        ] : [],
+        var.db_port_secret_arn != "" ? [
+          {
+            name      = "DB_PORT"
+            valueFrom = var.db_port_secret_arn
+          }
+        ] : [],
+        var.db_name_secret_arn != "" ? [
+          {
+            name      = "DB_NAME"
+            valueFrom = var.db_name_secret_arn
+          }
+        ] : [],
         var.additional_secrets
       )
       

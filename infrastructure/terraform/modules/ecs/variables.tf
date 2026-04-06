@@ -128,6 +128,24 @@ variable "db_user_secret_arn" {
   type        = string
 }
 
+variable "db_host_secret_arn" {
+  description = "ARN of the DB host secret in Secrets Manager (optional - uses db_host variable if not provided)"
+  type        = string
+  default     = ""
+}
+
+variable "db_port_secret_arn" {
+  description = "ARN of the DB port secret in Secrets Manager (optional - uses db_port variable if not provided)"
+  type        = string
+  default     = ""
+}
+
+variable "db_name_secret_arn" {
+  description = "ARN of the DB name secret in Secrets Manager (optional - uses db_name variable if not provided)"
+  type        = string
+  default     = ""
+}
+
 variable "stripe_secret_key_secret_arn" {
   description = "ARN of the Stripe secret key in Secrets Manager"
   type        = string
