@@ -603,18 +603,13 @@ resource "aws_s3_bucket_policy" "scan_images_cloudfront" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "CloudFrontReadAccess"
-        Effect    = "Allow"
+        Sid    = "CloudFrontReadAccess"
+        Effect = "Allow"
         Principal = {
-          Service = "cloudfront.amazonaws.com"
+          AWS = module.cloudfront.assets_origin_access_identity_iam_arn
         }
-        Action    = "s3:GetObject"
-        Resource  = "${module.s3.scan_images_bucket_arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = module.cloudfront.assets_distribution_arn
-          }
-        }
+        Action   = "s3:GetObject"
+        Resource = "${module.s3.scan_images_bucket_arn}/*"
       }
     ]
   })
@@ -627,18 +622,13 @@ resource "aws_s3_bucket_policy" "pdf_exports_cloudfront" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "CloudFrontReadAccess"
-        Effect    = "Allow"
+        Sid    = "CloudFrontReadAccess"
+        Effect = "Allow"
         Principal = {
-          Service = "cloudfront.amazonaws.com"
+          AWS = module.cloudfront.assets_origin_access_identity_iam_arn
         }
-        Action    = "s3:GetObject"
-        Resource  = "${module.s3.pdf_exports_bucket_arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = module.cloudfront.assets_distribution_arn
-          }
-        }
+        Action   = "s3:GetObject"
+        Resource = "${module.s3.pdf_exports_bucket_arn}/*"
       }
     ]
   })
