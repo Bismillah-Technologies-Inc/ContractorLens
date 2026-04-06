@@ -439,6 +439,22 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "DB_USER"
           value = var.db_username
+        },
+        {
+          name  = "S3_SCAN_IMAGES_BUCKET"
+          value = module.s3.scan_images_bucket_name
+        },
+        {
+          name  = "S3_PDF_EXPORTS_BUCKET"
+          value = module.s3.pdf_exports_bucket_name
+        },
+        {
+          name  = "CLOUDFRONT_ASSETS_URL"
+          value = module.cloudfront.assets_distribution_domain_name
+        },
+        {
+          name  = "CLOUDFRONT_FRONTEND_URL"
+          value = module.cloudfront.frontend_distribution_domain_name
         }
       ]
       secrets = [
@@ -514,6 +530,118 @@ resource "aws_appautoscaling_target" "ecs_target" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+}
+
+# S3 Logging Bucket for CloudFront
+resource "aws_s3_bucket" "cloudfront_logs" {
+  bucket = "${var.logging_bucket_name}-${var.environment}"
+  
+  tags = {
+    Name        = "${var.project_name}-cloudfront-logs"
+    Environment = var.environment
+    Project     = "ContractorLens"
+    ManagedBy   = "Terraform"
+    CostCenter  = "Production"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# S3 Module
+module "s3" {
+  source = "./modules/s3"
+  
+  project_name  = var.project_name
+  environment   = var.environment
+  common_tags   = {
+    Environment = var.environment
+    Project     = "ContractorLens"
+    ManagedBy   = "Terraform"
+    CostCenter  = "Production"
+  }
+  cors_allowed_origins = var.cors_allowed_origins
+  cloudfront_distribution_arn = module.cloudfront.frontend_distribution_arn
+}
+
+# CloudFront Module
+module "cloudfront" {
+  source = "./modules/cloudfront"
+  
+  project_name  = var.project_name
+  environment   = var.environment
+  common_tags   = {
+    Environment = var.environment
+    Project     = "ContractorLens"
+    ManagedBy   = "Terraform"
+    CostCenter  = "Production"
+  }
+  frontend_bucket_domain_name = module.s3.frontend_assets_website_endpoint
+  assets_bucket_domain_name   = module.s3.scan_images_bucket_domain_name
+  logging_bucket_domain_name  = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+  price_class                 = var.price_class
+  enable_waf                  = var.enable_waf
+}
+
+# Update ECS Task Role with S3 access
+resource "aws_iam_role_policy_attachment" "ecs_task_s3_access" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = module.s3.s3_access_policy_arn
+}
+
+# Update S3 bucket policies for CloudFront OAI
+resource "aws_s3_bucket_policy" "scan_images_cloudfront" {
+  bucket = module.s3.scan_images_bucket_name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "CloudFrontReadAccess"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action    = "s3:GetObject"
+        Resource  = "${module.s3.scan_images_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.assets_distribution_arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_policy" "pdf_exports_cloudfront" {
+  bucket = module.s3.pdf_exports_bucket_name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "CloudFrontReadAccess"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action    = "s3:GetObject"
+        Resource  = "${module.s3.pdf_exports_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.assets_distribution_arn
+          }
+        }
+      }
+    ]
+  })
 }
 
 resource "aws_appautoscaling_policy" "ecs_policy_cpu" {

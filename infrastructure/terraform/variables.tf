@@ -123,6 +123,38 @@ variable "gemini_api_key" {
   sensitive   = true
 }
 
+# S3 Configuration
+variable "cors_allowed_origins" {
+  description = "Allowed origins for CORS configuration"
+  type        = list(string)
+  default     = ["https://*.contractorlens.app", "http://localhost:3000"]
+}
+
+variable "enable_s3_versioning" {
+  description = "Enable versioning for S3 buckets"
+  type        = bool
+  default     = true
+}
+
+# CloudFront Configuration
+variable "price_class" {
+  description = "CloudFront price class (PriceClass_100, PriceClass_200, PriceClass_All)"
+  type        = string
+  default     = "PriceClass_100"
+}
+
+variable "enable_waf" {
+  description = "Enable WAF web ACL for CloudFront distributions"
+  type        = bool
+  default     = false
+}
+
+variable "logging_bucket_name" {
+  description = "Name of the S3 bucket for CloudFront logs"
+  type        = string
+  default     = "contractorlens-cloudfront-logs"
+}
+
 # Security Configuration
 variable "enable_deletion_protection" {
   description = "Enable deletion protection for load balancer"

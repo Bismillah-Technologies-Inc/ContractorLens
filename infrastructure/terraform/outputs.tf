@@ -131,3 +131,60 @@ output "cloudwatch_dashboard_url" {
   description = "CloudWatch dashboard URL"
   value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${var.project_name}"
 }
+
+# S3 Bucket Outputs
+output "scan_images_bucket_name" {
+  description = "Name of the scan images bucket"
+  value       = module.s3.scan_images_bucket_name
+}
+
+output "pdf_exports_bucket_name" {
+  description = "Name of the PDF exports bucket"
+  value       = module.s3.pdf_exports_bucket_name
+}
+
+output "frontend_assets_bucket_name" {
+  description = "Name of the frontend assets bucket"
+  value       = module.s3.frontend_assets_bucket_name
+}
+
+output "cloudfront_logs_bucket_name" {
+  description = "Name of the CloudFront logs bucket"
+  value       = aws_s3_bucket.cloudfront_logs.id
+}
+
+# CloudFront Outputs
+output "frontend_distribution_domain_name" {
+  description = "Domain name of the frontend CloudFront distribution"
+  value       = module.cloudfront.frontend_distribution_domain_name
+}
+
+output "assets_distribution_domain_name" {
+  description = "Domain name of the assets CloudFront distribution"
+  value       = module.cloudfront.assets_distribution_domain_name
+}
+
+output "frontend_distribution_id" {
+  description = "ID of the frontend CloudFront distribution"
+  value       = module.cloudfront.frontend_distribution_id
+}
+
+output "assets_distribution_id" {
+  description = "ID of the assets CloudFront distribution"
+  value       = module.cloudfront.assets_distribution_id
+}
+
+output "assets_origin_access_identity_path" {
+  description = "Path of the origin access identity for assets bucket"
+  value       = module.cloudfront.assets_origin_access_identity_path
+}
+
+output "frontend_website_url" {
+  description = "Frontend website URL"
+  value       = "https://${module.cloudfront.frontend_distribution_domain_name}"
+}
+
+output "assets_cdn_url" {
+  description = "Assets CDN URL"
+  value       = "https://${module.cloudfront.assets_distribution_domain_name}"
+}
