@@ -1,45 +1,16 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var arService = ARService()
-    @State private var showingCreateNewProject = false
-    @State private var showingScanningView = false
-    @State private var newProjectName: String?
+    @StateObject private var authService = AuthService.shared
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                LazyVStack(spacing: ContractorLensTheme.Spacing.xl) {
-                    HeaderView()
-                    
-                    ActionButtonsView(
-                        showingCreateNewProject: $showingCreateNewProject
-                    )
-                    
-                    FeaturesOverviewView()
-                    
-                    Spacer(minLength: ContractorLensTheme.Spacing.xl)
-                }
-                .padding(ContractorLensTheme.Spacing.md)
-            }
-            .background(ContractorLensTheme.Colors.background)
-            .navigationTitle("ContractorLens")
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingCreateNewProject) {
-                CreateNewProjectView(isPresented: $showingCreateNewProject) { projectName in
-                    self.newProjectName = projectName
-                    self.showingScanningView = true
-                }
-            }
-            .fullScreenCover(isPresented: $showingScanningView) {
-                // We will pass the project name to the ScanningView later
-                ScanningView()
+        Group {
+            if authService.isAuthenticated {
+                ProjectListView()
+            } else {
+                LoginView()
             }
         }
-        .environmentObject(arService)
-        .contractorLensStyle()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("ContractorLens main screen")
     }
 }
 
