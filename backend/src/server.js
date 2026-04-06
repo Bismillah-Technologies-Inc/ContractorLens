@@ -1,7 +1,13 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
+const morgan = require('morgan');
 require('dotenv').config();
+
+// Import middleware
+const { securityMiddleware, requestIdMiddleware } = require('./middleware/security');
+const { routeSpecificRateLimiting } = require('./middleware/rateLimiter');
+const { authenticate, authenticateOptional } = require('./middleware/auth');
+const { errorHandler, notFoundHandler } = require('./middleware/error');
+const { metricsMiddleware } = require('./middleware/metrics');
 
 // Import routes
 const estimatesRoutes = require('./routes/estimates');
@@ -13,39 +19,32 @@ const db = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
+// Request ID for tracing
+app.use(requestIdMiddleware);
 
-// CORS configuration
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://contractorlens.com', 'https://app.contractorlens.com']
-    : ['http://localhost:3000', 'http://localhost:8080', 'http://127.0.0.1:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+// Security middleware (CORS + Helmet + custom headers)
+app.use(securityMiddleware);
+
+// Request logging with Morgan
+if (process.env.NODE_ENV === 'production') {
+  // Production: concise logging
+  app.use(morgan('combined', {
+    skip: (req, res) => req.path === '/health' || res.statusCode < 400
+  }));
+} else {
+  // Development: verbose logging
+  app.use(morgan('dev'));
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' })); // Large limit for takeoff data
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware (development only)
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
-    next();
-  });
-}
+// Metrics middleware
+app.use(metricsMiddleware);
+
+// Rate limiting (applied after security but before routes)
+app.use(routeSpecificRateLimiting);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -94,44 +93,15 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-// Mount routes
+// Mount routes with appropriate authentication
 app.use(estimatesRoutes);
 app.use(analysisRoutes);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Endpoint not found',
-    message: `${req.method} ${req.originalUrl} is not a valid endpoint`,
-    availableEndpoints: [
-      'GET /health',
-      'GET /api/v1',
-      'POST /api/v1/estimates',
-      'GET /api/v1/estimates',
-      'GET /api/v1/estimates/:id',
-      'PUT /api/v1/estimates/:id/status',
-      'DELETE /api/v1/estimates/:id',
-      'POST /api/v1/analysis/enhanced-estimate',
-      'POST /api/v1/analysis/room-analysis',
-      'GET /api/v1/analysis/health',
-      'GET /api/v1/analysis/capabilities'
-    ]
-  });
-});
+app.use(notFoundHandler);
 
-// Global error handler
-app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
-  
-  // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  
-  res.status(error.status || 500).json({
-    error: 'Internal server error',
-    message: isDevelopment ? error.message : 'Something went wrong',
-    ...(isDevelopment && { stack: error.stack })
-  });
-});
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {

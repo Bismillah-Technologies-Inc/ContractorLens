@@ -1,10 +1,18 @@
 // ContractorLens Production Metrics Middleware
-const AWS = require('aws-sdk');
+let AWS = null;
+let cloudWatch = null;
 
-// Configure CloudWatch client
-const cloudWatch = new AWS.CloudWatch({
-  region: process.env.AWS_REGION || 'us-west-2'
-});
+try {
+  AWS = require('aws-sdk');
+  
+  // Configure CloudWatch client
+  cloudWatch = new AWS.CloudWatch({
+    region: process.env.AWS_REGION || 'us-west-2'
+  });
+} catch (error) {
+  console.warn('AWS SDK not available. Metrics will be logged locally only.');
+  cloudWatch = null;
+}
 
 class MetricsService {
   constructor() {
@@ -159,7 +167,7 @@ class MetricsService {
   }
 
   /**
-   * Flush metrics buffer to CloudWatch
+   * Flush metrics buffer to CloudWatch or log locally
    */
   async flushMetrics() {
     if (this.metricsBuffer.length === 0) return;
@@ -167,21 +175,30 @@ class MetricsService {
     const metrics = [...this.metricsBuffer];
     this.metricsBuffer = [];
 
-    try {
-      const params = {
-        Namespace: this.namespace,
-        MetricData: metrics
-      };
+    if (cloudWatch) {
+      try {
+        const params = {
+          Namespace: this.namespace,
+          MetricData: metrics
+        };
 
-      await cloudWatch.putMetricData(params).promise();
-      console.log(`✅ Flushed ${metrics.length} metrics to CloudWatch`);
-    } catch (error) {
-      console.error('❌ Failed to flush metrics to CloudWatch:', error);
-      
-      // Re-add metrics to buffer for retry (with limit to prevent memory issues)
-      if (this.metricsBuffer.length < this.bufferSize * 2) {
-        this.metricsBuffer.unshift(...metrics);
+        await cloudWatch.putMetricData(params).promise();
+        console.log(`✅ Flushed ${metrics.length} metrics to CloudWatch`);
+      } catch (error) {
+        console.error('❌ Failed to flush metrics to CloudWatch:', error);
+        
+        // Re-add metrics to buffer for retry (with limit to prevent memory issues)
+        if (this.metricsBuffer.length < this.bufferSize * 2) {
+          this.metricsBuffer.unshift(...metrics);
+        }
       }
+    } else {
+      // Log metrics locally if CloudWatch is not available
+      console.log(`📊 Local metrics (${metrics.length}):`, {
+        timestamp: new Date().toISOString(),
+        count: metrics.length,
+        sample: metrics.slice(0, 3) // Show first 3 metrics as sample
+      });
     }
   }
 
