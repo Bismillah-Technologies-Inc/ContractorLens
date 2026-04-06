@@ -6,6 +6,7 @@ require('dotenv').config();
 // Import routes
 const estimatesRoutes = require('./routes/estimates');
 const analysisRoutes = require('./routes/analysis');
+const authRoutes = require('./routes/auth');
 
 // Import database connection (this will test the connection)
 const db = require('./config/database');
@@ -79,6 +80,11 @@ app.get('/api/v1', (req, res) => {
     version: '1.0.0',
     description: 'Assembly Engine and cost calculation API for ContractorLens',
     endpoints: {
+      'POST /api/v1/auth/register': 'Register new user with Firebase auth',
+      'POST /api/v1/auth/login': 'Login existing user',
+      'GET /api/v1/auth/me': 'Get current authenticated user profile',
+      'POST /api/v1/auth/refresh': 'Refresh Firebase ID token',
+      'PATCH /api/v1/auth/profile': 'Update user profile',
       'POST /api/v1/estimates': 'Create new estimate using Assembly Engine',
       'GET /api/v1/estimates': 'List user estimates with pagination',
       'GET /api/v1/estimates/:id': 'Get specific estimate details',
@@ -97,6 +103,7 @@ app.get('/api/v1', (req, res) => {
 // Mount routes
 app.use(estimatesRoutes);
 app.use(analysisRoutes);
+app.use(authRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -106,6 +113,11 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       'GET /health',
       'GET /api/v1',
+      'POST /api/v1/auth/register',
+      'POST /api/v1/auth/login',
+      'GET /api/v1/auth/me',
+      'POST /api/v1/auth/refresh',
+      'PATCH /api/v1/auth/profile',
       'POST /api/v1/estimates',
       'GET /api/v1/estimates',
       'GET /api/v1/estimates/:id',

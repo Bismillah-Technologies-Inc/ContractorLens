@@ -6,7 +6,7 @@ const db = require('../config/database');
 const { firestore } = require('../config/firebase');
 
 const router = express.Router();
-const assemblyEngine = new AssemblyEngine();
+const assemblyEngine = require('../services/assemblyEngine');
 
 // Input validation schemas
 const takeoffDataSchema = Joi.object({
