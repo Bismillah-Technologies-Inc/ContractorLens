@@ -1,16 +1,37 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var authService: AuthService
     @StateObject private var arService = ARService()
     @State private var showingCreateNewProject = false
     @State private var showingScanningView = false
     @State private var newProjectName: String?
+    @State private var showingLogin = false
+    @State private var showingRegister = false
 
     var body: some View {
+        Group {
+            if authService.isAuthenticated {
+                authenticatedView
+            } else {
+                unauthenticatedView
+            }
+        }
+        .sheet(isPresented: $showingLogin) {
+            LoginView()
+                .environmentObject(authService)
+        }
+        .sheet(isPresented: $showingRegister) {
+            RegisterView()
+                .environmentObject(authService)
+        }
+    }
+    
+    private var authenticatedView: some View {
         NavigationView {
             ScrollView {
                 LazyVStack(spacing: ContractorLensTheme.Spacing.xl) {
-                    HeaderView()
+                    UserHeaderView()
                     
                     ActionButtonsView(
                         showingCreateNewProject: $showingCreateNewProject
@@ -40,6 +61,173 @@ struct ContentView: View {
         .contractorLensStyle()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("ContractorLens main screen")
+    }
+    
+    private var unauthenticatedView: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: ContractorLensTheme.Spacing.xl) {
+                    // Professional logo/icon with animation
+                    ZStack {
+                        Circle()
+                            .fill(ContractorLensTheme.Colors.primary.opacity(0.1))
+                            .frame(width: 120, height: 120)
+                        
+                        Image(systemName: "viewfinder.circle.fill")
+                            .font(.system(size: ContractorLensTheme.IconSize.hero, weight: .medium))
+                            .foregroundColor(ContractorLensTheme.Colors.primary)
+                    }
+                    .shadow(
+                        color: ContractorLensTheme.Shadow.mediumShadow.color,
+                        radius: ContractorLensTheme.Shadow.mediumShadow.radius,
+                        x: ContractorLensTheme.Shadow.mediumShadow.x,
+                        y: ContractorLensTheme.Shadow.mediumShadow.y
+                    )
+                    
+                    VStack(spacing: ContractorLensTheme.Spacing.md) {
+                        Text("ContractorLens")
+                            .font(ContractorLensTheme.Typography.largeTitle)
+                            .foregroundColor(ContractorLensTheme.Colors.textPrimary)
+                        
+                        Text("Professional AR Construction Estimates")
+                            .font(ContractorLensTheme.Typography.subheadline)
+                            .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    VStack(spacing: ContractorLensTheme.Spacing.md) {
+                        Button(action: { showingLogin = true }) {
+                            Text("Sign In")
+                                .font(ContractorLensTheme.Typography.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, ContractorLensTheme.Spacing.md)
+                        }
+                        .background(ContractorLensTheme.Colors.primary)
+                        .cornerRadius(ContractorLensTheme.CornerRadius.md)
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: { showingRegister = true }) {
+                            Text("Create Account")
+                                .font(ContractorLensTheme.Typography.headline)
+                                .foregroundColor(ContractorLensTheme.Colors.primary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, ContractorLensTheme.Spacing.md)
+                        }
+                        .background(ContractorLensTheme.Colors.surface)
+                        .cornerRadius(ContractorLensTheme.CornerRadius.md)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: ContractorLensTheme.CornerRadius.md)
+                                .stroke(ContractorLensTheme.Colors.primary, lineWidth: 1)
+                        )
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: {
+                            // Continue without account (limited functionality)
+                        }) {
+                            Text("Try Demo")
+                                .font(ContractorLensTheme.Typography.subheadline)
+                                .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(ContractorLensTheme.Spacing.lg)
+                    .surfaceBackground()
+                    .cornerRadius(ContractorLensTheme.CornerRadius.lg)
+                    
+                    FeaturesOverviewView()
+                    
+                    Spacer(minLength: ContractorLensTheme.Spacing.xl)
+                }
+                .padding(ContractorLensTheme.Spacing.lg)
+            }
+            .background(ContractorLensTheme.Colors.background)
+            .navigationTitle("Welcome")
+            .navigationBarTitleDisplayMode(.large)
+            .contractorLensStyle()
+        }
+    }
+}
+
+private struct UserHeaderView: View {
+    @EnvironmentObject var authService: AuthService
+    
+    var body: some View {
+        VStack(spacing: ContractorLensTheme.Spacing.lg) {
+            HStack {
+                VStack(alignment: .leading, spacing: ContractorLensTheme.Spacing.xs) {
+                    if let displayName = authService.currentUser?.displayName {
+                        Text("Welcome, \(displayName)")
+                            .font(ContractorLensTheme.Typography.title2)
+                            .foregroundColor(ContractorLensTheme.Colors.textPrimary)
+                    } else {
+                        Text("Welcome Back")
+                            .font(ContractorLensTheme.Typography.title2)
+                            .foregroundColor(ContractorLensTheme.Colors.textPrimary)
+                    }
+                    
+                    if let email = authService.currentUser?.email {
+                        Text(email)
+                            .font(ContractorLensTheme.Typography.caption1)
+                            .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    try? authService.signOut()
+                }) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                        .padding(8)
+                        .background(ContractorLensTheme.Colors.surface)
+                        .cornerRadius(ContractorLensTheme.CornerRadius.md)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            // Professional logo/icon
+            ZStack {
+                Circle()
+                    .fill(ContractorLensTheme.Colors.primary.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "viewfinder.circle.fill")
+                    .font(.system(size: ContractorLensTheme.IconSize.hero, weight: .medium))
+                    .foregroundColor(ContractorLensTheme.Colors.primary)
+            }
+            .shadow(
+                color: ContractorLensTheme.Shadow.mediumShadow.color,
+                radius: ContractorLensTheme.Shadow.mediumShadow.radius,
+                x: ContractorLensTheme.Shadow.mediumShadow.x,
+                y: ContractorLensTheme.Shadow.mediumShadow.y
+            )
+            
+            VStack(spacing: ContractorLensTheme.Spacing.sm) {
+                Text("ContractorLens")
+                    .font(ContractorLensTheme.Typography.largeTitle)
+                    .foregroundColor(ContractorLensTheme.Colors.textPrimary)
+                
+                Text("Professional AR Construction Estimates")
+                    .font(ContractorLensTheme.Typography.subheadline)
+                    .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+                
+                HStack(spacing: ContractorLensTheme.Spacing.xs) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(ContractorLensTheme.Colors.success)
+                        .font(.system(size: ContractorLensTheme.IconSize.small))
+                    
+                    Text("Accurate • Fast • Professional")
+                        .font(ContractorLensTheme.Typography.caption1)
+                        .foregroundColor(ContractorLensTheme.Colors.textSecondary)
+                }
+                .padding(.top, ContractorLensTheme.Spacing.xs)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("ContractorLens. Professional AR Construction Estimates. Accurate, Fast, Professional.")
     }
 }
 
