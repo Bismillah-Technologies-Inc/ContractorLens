@@ -187,3 +187,10 @@ variable "schedule_scaling" {
   type        = bool
   default     = true
 }
+
+# High Availability
+variable "multi_az" {
+  description = "Enable Multi-AZ deployment for RDS"
+  type        = bool
+  default     = false
+}
