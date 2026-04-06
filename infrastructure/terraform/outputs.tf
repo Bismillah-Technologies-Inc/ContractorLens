@@ -110,6 +110,18 @@ output "parameter_store_arns" {
   sensitive = true
 }
 
+output "s3_bucket_name" {
+  value = aws_s3_bucket.contractorlens_assets.bucket
+}
+
+output "cloudfront_domain" {
+  value = aws_cloudfront_distribution.assets.domain_name
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.backend.repository_url
+}
+
 # Application URLs
 output "application_url" {
   description = "Application URL"

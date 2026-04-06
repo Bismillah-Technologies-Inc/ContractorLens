@@ -6,9 +6,23 @@ variable "aws_region" {
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment name (dev, staging, prod)"
   type        = string
-  default     = "production"
+  default     = "dev"
+}
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook endpoint secret"
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 variable "project_name" {
