@@ -1,0 +1,44 @@
+# ContractorLens Infrastructure Configuration
+# Copy this file to terraform.tfvars and update all values
+
+# AWS Configuration
+aws_region  = "us-west-2"
+environment = "production"
+
+# Project Configuration
+project_name = "contractorlens"
+
+# Database Configuration
+db_password = "CHANGE_THIS_SECURE_DATABASE_PASSWORD_IN_PRODUCTION"
+
+# Container Registry
+ecr_repository_url = "123456789012.dkr.ecr.us-west-2.amazonaws.com/contractorlens"
+
+# Firebase Configuration (Required)
+firebase_project_id   = "your-firebase-project-id"
+firebase_private_key  = "-----BEGIN PRIVATE KEY-----\nYOUR_FIREBASE_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----"
+firebase_client_email = "firebase-adminsdk-xxx@your-project.iam.gserviceaccount.com"
+
+# Gemini Configuration (Required)
+gemini_api_key = "your_google_gemini_api_key_here"
+
+# Domain Configuration (Optional)
+domain_name     = "contractorlens.com"
+certificate_arn = "arn:aws:acm:us-west-2:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+
+# Performance Configuration
+ecs_desired_count = 2
+ecs_min_capacity  = 2
+ecs_max_capacity  = 10
+
+# Security Configuration
+enable_deletion_protection = true
+
+# Cost Optimization
+enable_spot_instances = false
+schedule_scaling     = true
+
+# Backup Configuration
+backup_retention_period = 30
+backup_window          = "03:00-04:00"
+maintenance_window     = "Sun:04:00-Sun:05:00"

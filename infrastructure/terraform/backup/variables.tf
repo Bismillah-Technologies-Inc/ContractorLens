@@ -1,13 +1,14 @@
 # ContractorLens Infrastructure Variables
-
-# Environment Configuration
-variable "environment" {
-  description = "Environment name (dev, prod)"
+variable "aws_region" {
+  description = "AWS region for deployment"
   type        = string
-  validation {
-    condition     = contains(["dev", "prod"], var.environment)
-    error_message = "Environment must be either 'dev' or 'prod'."
-  }
+  default     = "us-west-2"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "production"
 }
 
 variable "project_name" {
@@ -16,48 +17,30 @@ variable "project_name" {
   default     = "contractorlens"
 }
 
-variable "aws_region" {
-  description = "AWS region for deployment"
-  type        = string
-  default     = "us-west-2"
-}
-
-# VPC Configuration
+# Network Configuration
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
-variable "enable_nat_gateway" {
-  description = "Enable NAT gateway for private subnets"
-  type        = bool
-  default     = true
-}
-
-variable "single_nat_gateway" {
-  description = "Use single NAT gateway instead of one per AZ"
-  type        = bool
-  default     = true
-}
-
-# RDS Configuration
+# Database Configuration
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t3.medium"
 }
 
 variable "db_allocated_storage" {
   description = "Initial storage allocation for RDS (GB)"
   type        = number
-  default     = 20
+  default     = 100
 }
 
 variable "db_max_allocated_storage" {
   description = "Maximum storage allocation for RDS (GB)"
   type        = number
-  default     = 100
+  default     = 1000
 }
 
 variable "db_name" {
@@ -78,47 +61,35 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "db_backup_retention_period" {
-  description = "Database backup retention period in days"
-  type        = number
-  default     = 7
-}
-
-variable "db_multi_az" {
-  description = "Enable multi-AZ deployment for RDS"
-  type        = bool
-  default     = false
-}
-
 # ECS Configuration
 variable "ecs_cpu" {
   description = "CPU units for ECS task"
   type        = number
-  default     = 256
+  default     = 1024
 }
 
 variable "ecs_memory" {
   description = "Memory (MB) for ECS task"
   type        = number
-  default     = 512
+  default     = 2048
 }
 
 variable "ecs_desired_count" {
   description = "Desired number of ECS tasks"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "ecs_min_capacity" {
   description = "Minimum number of ECS tasks for auto scaling"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "ecs_max_capacity" {
   description = "Maximum number of ECS tasks for auto scaling"
   type        = number
-  default     = 3
+  default     = 10
 }
 
 variable "ecr_repository_url" {
@@ -152,24 +123,24 @@ variable "gemini_api_key" {
   sensitive   = true
 }
 
+# Security Configuration
+variable "enable_deletion_protection" {
+  description = "Enable deletion protection for load balancer"
+  type        = bool
+  default     = true
+}
+
 # Domain Configuration
 variable "domain_name" {
   description = "Domain name for the application"
   type        = string
-  default     = ""
+  default     = "contractorlens.com"
 }
 
 variable "certificate_arn" {
   description = "ACM certificate ARN for HTTPS"
   type        = string
   default     = ""
-}
-
-# Security Configuration
-variable "enable_deletion_protection" {
-  description = "Enable deletion protection for load balancer"
-  type        = bool
-  default     = true
 }
 
 # Monitoring Configuration
@@ -185,9 +156,34 @@ variable "log_retention_days" {
   default     = 30
 }
 
-# CloudFront Configuration
-variable "enable_cloudfront_waf" {
-  description = "Enable WAF for CloudFront distributions"
+# Backup Configuration
+variable "backup_retention_period" {
+  description = "Database backup retention period in days"
+  type        = number
+  default     = 30
+}
+
+variable "backup_window" {
+  description = "Database backup window (UTC)"
+  type        = string
+  default     = "03:00-04:00"
+}
+
+variable "maintenance_window" {
+  description = "Database maintenance window (UTC)"
+  type        = string
+  default     = "Sun:04:00-Sun:05:00"
+}
+
+# Cost Optimization
+variable "enable_spot_instances" {
+  description = "Enable EC2 Spot instances for cost optimization"
   type        = bool
   default     = false
+}
+
+variable "schedule_scaling" {
+  description = "Enable scheduled scaling for cost optimization"
+  type        = bool
+  default     = true
 }

@@ -1,133 +1,132 @@
 # ContractorLens Infrastructure Outputs
+
+# VPC Outputs
 output "vpc_id" {
   description = "ID of the VPC"
-  value       = aws_vpc.main.id
+  value       = module.vpc.vpc_id
 }
 
 output "public_subnet_ids" {
   description = "IDs of the public subnets"
-  value       = aws_subnet.public[*].id
+  value       = module.vpc.public_subnet_ids
 }
 
 output "private_subnet_ids" {
   description = "IDs of the private subnets"
-  value       = aws_subnet.private[*].id
+  value       = module.vpc.private_subnet_ids
 }
 
+# Database Outputs
+output "db_endpoint" {
+  description = "RDS instance endpoint"
+  value       = module.rds.db_endpoint
+  sensitive   = true
+}
+
+output "db_port" {
+  description = "RDS instance port"
+  value       = module.rds.db_port
+}
+
+output "db_name" {
+  description = "RDS database name"
+  value       = module.rds.db_name
+}
+
+# ECS Outputs
 output "load_balancer_dns_name" {
   description = "DNS name of the load balancer"
-  value       = aws_lb.main.dns_name
-}
-
-output "load_balancer_zone_id" {
-  description = "Zone ID of the load balancer"
-  value       = aws_lb.main.zone_id
+  value       = module.ecs.load_balancer_dns_name
 }
 
 output "load_balancer_arn" {
   description = "ARN of the load balancer"
-  value       = aws_lb.main.arn
-}
-
-output "database_endpoint" {
-  description = "RDS instance endpoint"
-  value       = aws_db_instance.main.endpoint
-  sensitive   = true
-}
-
-output "database_port" {
-  description = "RDS instance port"
-  value       = aws_db_instance.main.port
-}
-
-output "database_name" {
-  description = "RDS database name"
-  value       = aws_db_instance.main.db_name
+  value       = module.ecs.load_balancer_arn
 }
 
 output "ecs_cluster_id" {
   description = "ID of the ECS cluster"
-  value       = aws_ecs_cluster.main.id
-}
-
-output "ecs_cluster_arn" {
-  description = "ARN of the ECS cluster"
-  value       = aws_ecs_cluster.main.arn
+  value       = module.ecs.ecs_cluster_id
 }
 
 output "ecs_service_name" {
   description = "Name of the ECS service"
-  value       = aws_ecs_service.app.name
+  value       = module.ecs.ecs_service_name
 }
 
-output "cloudwatch_log_group_name" {
-  description = "Name of the CloudWatch log group"
-  value       = aws_cloudwatch_log_group.app.name
+# S3 Outputs
+output "scan_images_bucket_name" {
+  description = "Name of the scan images bucket"
+  value       = module.s3.scan_images_bucket_name
 }
 
-output "nat_gateway_ip" {
-  description = "Elastic IP address of NAT Gateway"
-  value       = aws_eip.nat.public_ip
+output "pdf_exports_bucket_name" {
+  description = "Name of the PDF exports bucket"
+  value       = module.s3.pdf_exports_bucket_name
 }
 
-# Security Groups
+output "frontend_assets_bucket_name" {
+  description = "Name of the frontend assets bucket"
+  value       = module.s3.frontend_assets_bucket_name
+}
+
+# CloudFront Outputs
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = module.cloudfront.cloudfront_distribution_id
+}
+
+output "cloudfront_distribution_domain_name" {
+  description = "Domain name of the CloudFront distribution"
+  value       = module.cloudfront.cloudfront_distribution_domain_name
+}
+
+# Security Group Outputs
 output "alb_security_group_id" {
   description = "ID of the ALB security group"
-  value       = aws_security_group.alb.id
+  value       = module.vpc.alb_security_group_id
 }
 
 output "app_security_group_id" {
   description = "ID of the application security group"
-  value       = aws_security_group.app.id
+  value       = module.vpc.app_security_group_id
 }
 
 output "db_security_group_id" {
   description = "ID of the database security group"
-  value       = aws_security_group.db.id
-}
-
-# IAM Roles
-output "ecs_task_execution_role_arn" {
-  description = "ARN of the ECS task execution role"
-  value       = aws_iam_role.ecs_task_execution_role.arn
-}
-
-output "ecs_task_role_arn" {
-  description = "ARN of the ECS task role"
-  value       = aws_iam_role.ecs_task_role.arn
-}
-
-# Parameter Store ARNs (for reference)
-output "parameter_store_arns" {
-  description = "ARNs of Parameter Store secrets"
-  value = {
-    db_password           = aws_ssm_parameter.db_password.arn
-    firebase_project_id   = aws_ssm_parameter.firebase_project_id.arn
-    firebase_private_key  = aws_ssm_parameter.firebase_private_key.arn
-    firebase_client_email = aws_ssm_parameter.firebase_client_email.arn
-    gemini_api_key       = aws_ssm_parameter.gemini_api_key.arn
-  }
-  sensitive = true
+  value       = module.vpc.db_security_group_id
 }
 
 # Application URLs
 output "application_url" {
   description = "Application URL"
-  value       = "http://${aws_lb.main.dns_name}"
+  value       = "http://${module.ecs.load_balancer_dns_name}"
 }
 
 output "health_check_url" {
   description = "Health check URL"
-  value       = "http://${aws_lb.main.dns_name}/health"
+  value       = "http://${module.ecs.load_balancer_dns_name}/health"
 }
 
 output "api_base_url" {
   description = "API base URL"
-  value       = "http://${aws_lb.main.dns_name}/api/v1"
+  value       = "http://${module.ecs.load_balancer_dns_name}/api/v1"
 }
 
-# Monitoring
-output "cloudwatch_dashboard_url" {
-  description = "CloudWatch dashboard URL"
-  value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${var.project_name}"
+# Combined Information
+output "environment_summary" {
+  description = "Summary of the deployed environment"
+  value = {
+    environment        = var.environment
+    project_name       = var.project_name
+    aws_region         = var.aws_region
+    vpc_id             = module.vpc.vpc_id
+    app_url            = "http://${module.ecs.load_balancer_dns_name}"
+    db_endpoint        = module.rds.db_endpoint
+    scan_bucket        = module.s3.scan_images_bucket_name
+    pdf_bucket         = module.s3.pdf_exports_bucket_name
+    frontend_bucket    = module.s3.frontend_assets_bucket_name
+    cloudfront_distro  = module.cloudfront.cloudfront_distribution_domain_name
+  }
+  sensitive = true
 }
