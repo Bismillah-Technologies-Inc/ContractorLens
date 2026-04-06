@@ -439,6 +439,22 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "DB_USER"
           value = var.db_username
+        },
+        {
+          name  = "S3_BUCKET_NAME"
+          value = aws_s3_bucket.contractorlens_assets.bucket
+        },
+        {
+          name  = "CLOUDFRONT_URL"
+          value = aws_cloudfront_distribution.assets.domain_name
+        },
+        {
+          name  = "STRIPE_SECRET_KEY"
+          value = var.stripe_secret_key
+        },
+        {
+          name  = "STRIPE_WEBHOOK_SECRET"
+          value = var.stripe_webhook_secret
         }
       ]
       secrets = [

@@ -131,3 +131,15 @@ output "cloudwatch_dashboard_url" {
   description = "CloudWatch dashboard URL"
   value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${var.project_name}"
 }
+
+output "s3_bucket_name" {
+  value = aws_s3_bucket.contractorlens_assets.bucket
+}
+
+output "cloudfront_domain" {
+  value = aws_cloudfront_distribution.assets.domain_name
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.backend.repository_url
+}
