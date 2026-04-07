@@ -16,9 +16,9 @@ class EstimateViewModel: ObservableObject {
 
         // In a real app, you would send the scanResult to your backend here.
         // The backend would perform the Gemini analysis and return the structured estimate.
-        
+
         // For now, we will simulate this process and use mock data
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: DispatchWorkItem(block: { // Simulate network delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Simulate network delay
             let mockEstimate = Estimate(
                 subtotal: 1020.0,
                 materialTotal: 1020.0,
@@ -79,7 +79,7 @@ class EstimateViewModel: ObservableObject {
             )
             self.currentEstimate = mockEstimate
             self.isLoading = false
-        }))
+        }
     }
 
     func clearError() {
@@ -90,7 +90,7 @@ class EstimateViewModel: ObservableObject {
         error = nil
         generateEstimateWithGeminiAnalysis(from: scanResult)
     }
-    
+
     var hasError: Bool {
         return error != nil
     }

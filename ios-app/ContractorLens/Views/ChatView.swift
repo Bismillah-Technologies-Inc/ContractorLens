@@ -111,5 +111,5 @@ struct TypingIndicator: View {
 }
 
 #Preview {
-    ChatView(viewModel: ChatViewModel(estimate: MockEstimateGenerator.generate())) { _ in }
+    // ChatView(viewModel: ChatViewModel(estimate: MockEstimateGenerator.generate())) { _ in }
 }

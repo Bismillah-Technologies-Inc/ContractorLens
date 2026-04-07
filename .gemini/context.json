@@ -1,0 +1,60 @@
+{
+  "last_code_analysis": "2025-09-14T16:17:45.478775",
+  "last_doc_analysis": "2025-09-14T16:17:45.478515",
+  "project_direction": "To the AI Development Team:\n\nHere is a high-level summary of the ContractorLens project's current strategic direction, based on the provided documentation.\n\n### **1. Project Vision & Strategic Position**\n\nContractorLens aims to be the market-leading construction cost estimation tool. Our core differentiator is a unique **\"Scan-to-Estimate\" workflow**, combining AR scanning (iOS app), AI-powered visual analysis (Gemini ML Service), and a deterministic cost calculation backend (Assembly Engine).\n\nCompetitive analysis confirms this approach is unique. Competitors focus on text-prompt-based estimation (Handoff AI) or offer a superior scanning experience but without the estimation component (Canvas). Our hybrid model is our key strategic advantage.\n\n### **2. Core Features & Current State**\n\n*   **iOS App:** Uses Apple's RoomPlan for AR scanning to capture room dimensions and identify objects.\n*   **Gemini ML Service:** Analyzes images from the scan to produce a structured JSON list of building elements (e.g., \"120 SF of drywall\").\n*   **Backend Assembly Engine:** Takes the JSON list and deterministically calculates a line-item cost estimate based on a PostgreSQL database.\n\nThe system is currently at **\"Level 2\" granularity**. It is functional and proves the architectural concept, but the estimates lack the detail required for professional use.\n\n### **3. Technical Roadmap & Stated Priorities**\n\nThe project's **single most critical priority** is to achieve professional-grade estimate quality. This is detailed in the **`ESTIMATE_GRANULARITY_ROADMAP.md`**.\n\n**Primary Goal: Evolve from \"Level 2\" to \"Level 5\" Granularity.**\n\nThis involves a phased overhaul of the backend and database to produce highly detailed, defensible estimates organized by CSI MasterFormat divisions. The key development phases are:\n\n1.  **Database Foundation:** Extend the database schema to support granular data for materials (manufacturer, model), labor (task-specific hours, difficulty), and waste factors.\n2.  **Specialized Calculation Services:** Build new, single-responsibility services for calculating material quantity (including waste), labor hours (based on conditions), and enriching material data.\n3.  **Refactor the Assembly Engine:** Upgrade the engine to act as an orchestrator that uses the new specialized services for its calculations.\n4.  **API & Data Seeding:** Update the API to return the new, deeply nested estimate structure and populate the new tables with sample data.\n5.  **Frontend Adaptation:** Update the iOS app's data models and views to correctly parse and display the more detailed estimate.\n\n### **4. Long-Term & UX Priorities**\n\n*   **Improve Scanning UX:** A high-impact, near-term priority is to adopt the user guidance techniques from the Canvas app to improve the quality of our AR scans and enhance user trust.\n*   **Exploit RoomPlan API:** The long-term backlog should include implementing currently unused RoomPlan features like **multi-room scanning** and **custom 3D asset substitution**. These are considered key features for a future \"Pro\" version.\n",
+  "discovered_tasks": [
+    {
+      "task_id": "DETECTED_001",
+      "title": "Implement applyFinishLevels in Assembly Engine",
+      "description": "Address the following detected issue: Implement applyFinishLevels in Assembly Engine",
+      "agent": "backend-engineer",
+      "status": "detected",
+      "priority": "high",
+      "dependencies": [],
+      "deliverables": [],
+      "context_files": [],
+      "source": "detected",
+      "detected_in_file": null
+    },
+    {
+      "task_id": "DETECTED_002",
+      "title": "Implement getLocalizedCost in Assembly Engine",
+      "description": "Address the following detected issue: Implement getLocalizedCost in Assembly Engine",
+      "agent": "backend-engineer",
+      "status": "detected",
+      "priority": "high",
+      "dependencies": [],
+      "deliverables": [],
+      "context_files": [],
+      "source": "detected",
+      "detected_in_file": null
+    },
+    {
+      "task_id": "DETECTED_003",
+      "title": "Implement calculateEstimate in Assembly Engine",
+      "description": "Address the following detected issue: Implement calculateEstimate in Assembly Engine",
+      "agent": "backend-engineer",
+      "status": "detected",
+      "priority": "high",
+      "dependencies": [],
+      "deliverables": [],
+      "context_files": [],
+      "source": "detected",
+      "detected_in_file": null
+    },
+    {
+      "task_id": "DETECTED_004",
+      "title": "Implement startScanning method",
+      "description": "Address the following detected issue: Implement startScanning method",
+      "agent": "ios-developer",
+      "status": "detected",
+      "priority": "high",
+      "dependencies": [],
+      "deliverables": [],
+      "context_files": [],
+      "source": "detected",
+      "detected_in_file": null
+    }
+  ],
+  "active_tasks": {}
+}

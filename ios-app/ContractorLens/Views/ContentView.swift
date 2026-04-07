@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct ContentView: View {
@@ -41,7 +40,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .fullScreenCover(item: $projectToScan, onDismiss: { 
+            .fullScreenCover(item: $projectToScan, onDismiss: {
                 loadProjects()
             }) { project in
                 // Provide a binding to the project for the scanning view
@@ -80,7 +79,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     private var projectListView: some View {
         List {
             ForEach($projects) { $project in
@@ -91,7 +90,7 @@ struct ContentView: View {
             .onDelete(perform: deleteProject)
         }
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -109,11 +108,11 @@ struct ContentView: View {
             Spacer()
         }
     }
-    
+
     private func loadProjects() {
         self.projects = persistenceService.loadProjects()
     }
-    
+
     private func deleteProject(at offsets: IndexSet) {
         offsets.forEach { index in
             let project = projects[index]
@@ -129,7 +128,7 @@ struct ContentView: View {
 
 struct ProjectRowView: View {
     let project: Project
-    
+
     var body: some View {
         HStack {
             if let imageData = project.coverImage, let uiImage = UIImage(data: imageData) {
@@ -145,7 +144,7 @@ struct ProjectRowView: View {
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
             }
-            
+
             VStack(alignment: .leading) {
                 Text(project.name)
                     .font(.headline)

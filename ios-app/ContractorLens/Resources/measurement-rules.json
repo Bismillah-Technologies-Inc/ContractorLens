@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "floorArea": "room.dimensions.area",
+    "wallArea": "room.surfaces.filter(type == 'wall').area.sum",
+    "perimeter": "(room.dimensions.length + room.dimensions.width) * 2",
+    "cabinetLinearFeet": "room.dimensions.length * 0.5",
+    "countertopArea": "room.dimensions.length * 2",
+    "plumbingFixtures": "room.surfaces.filter(type == 'door').count + 1",
+    "electricalFixtures": "room.surfaces.filter(type == 'window').count + 4",
+    "kitchenFixtures": "1",
+    "tileArea": "room.dimensions.area + room.surfaces.filter(type == 'wall').area * 0.5",
+    "bathroomPlumbingFixtures": "room.surfaces.filter(type == 'door').count + 2",
+    "vanityCount": "1",
+    "bathroomElectricalFixtures": "room.surfaces.filter(type == 'window').count + 3"
+  }
+}

@@ -1,0 +1,149 @@
+agents:
+  backend-engineer:
+    context_files:
+    - database/schemas/schema.sql
+    - backend/src/services/assemblyEngine.js
+    - backend/src/services/geminiIntegration.js
+    output_patterns:
+    - path: backend/src/services/assemblyEngine.js
+      pattern: assemblyEngine
+    - path: backend/src/services/costCalculator.js
+      pattern: costCalculator
+    - path: backend/src/routes/estimates.js
+      pattern: router|estimates
+    system_prompt: "You are a backend engineer for ContractorLens.\nCore understanding:\n\
+      - The Assembly Engine is DETERMINISTIC, not AI-based\n- Production rates are\
+      \ stored as quantity_per_unit in the database\n- Cost hierarchy: RetailPrices\
+      \ \u2192 national_average \xD7 location_modifier\n- You're building on existing\
+      \ Node.js/Express architecture\n"
+    validation:
+    - file_exists: backend/src/services/assemblyEngine.js
+    - contains_method: calculateEstimate
+    - contains_method: getLocalizedCost
+    - contains_method: applyFinishLevels
+  integration-engineer:
+    context_files:
+    - backend
+    - ml-services/gemini-service
+    - docker-compose.yml
+    system_prompt: "You are an integration engineer for ContractorLens.\nFocus on\
+      \ end-to-end testing of the complete flow:\n- iOS scan \u2192 Backend processing\
+      \ \u2192 Gemini analysis \u2192 Assembly Engine \u2192 Estimate\n- Use existing\
+      \ Docker setup for testing\n- Validate against OpenAPI specification\n"
+    validation:
+    - file_exists: testing/integration/e2e.test.js
+    - contains_test: scan_to_estimate_flow
+    - contains_test: assembly_engine_calculations
+    - contains_test: gemini_analysis_accuracy
+  ios-developer:
+    context_files:
+    - scanning-user-flow-explanation
+    - ios-app/ContractorLens.xcodeproj
+    output_patterns:
+    - path: ios-app/ContractorLens/AR/RoomScanner.swift
+      pattern: RoomScanner
+    - path: ios-app/ContractorLens/Models/ScanResult.swift
+      pattern: ScanResult
+    - path: ios-app/ContractorLens/Views/ScanView.swift
+      pattern: ScanView
+    system_prompt: 'You are an iOS developer for ContractorLens.
+
+      Core understanding:
+
+      - SwiftUI for all UI (no UIKit except for ARKit requirements)
+
+      - RoomPlan produces USDZ, not video
+
+      - Sample frames from ARSession.currentFrame every 0.5 seconds
+
+      - Measurements-first workflow: scan is the primary action
+
+      '
+    validation:
+    - file_exists: ios-app/ContractorLens/AR/RoomScanner.swift
+    - contains_class: RoomScanner
+    - contains_import: RoomPlan
+    - contains_import: ARKit
+base_path: /Users/mirzakhan/Projects/ContractorLens
+execution:
+  handlers:
+    on_complete: .gemini/handlers/on_complete.sh
+    on_error: .gemini/handlers/on_error.sh
+    on_start: .gemini/handlers/on_start.sh
+    save_output: .gemini/handlers/save_code.py
+  max_retries: 2
+  parallel_limit: 3
+  retry_on_failure: true
+  validation_required: true
+monitoring:
+  log_directory: .gemini/logs
+  progress_file: .gemini/progress.json
+  status_check_interval: 30
+project: ContractorLens
+version: '1.0'
+workflows:
+  complete_assembly_engine:
+    agent: backend-engineer
+    description: Complete the Assembly Engine implementation
+    tasks:
+    - id: BE002
+      prompt: "Complete the Assembly Engine production rate calculations.\nThe database\
+        \ schema shows quantity_per_unit is used for:\n- Materials: quantity needed\
+        \ per unit\n- Labor: HOURS per unit (production rate)\n\nImplement:\n1. calculateEstimate()\
+        \ method that processes takeoff data\n2. Production rate calculations: hours\
+        \ = quantity \xD7 quantity_per_unit\n3. Component cost aggregation\n\nUse\
+        \ the existing database schema and partial implementation.\n"
+    - id: BE003
+      prompt: "Implement the cost hierarchy logic:\n1. Check RetailPrices first (if\
+        \ < 7 days old)\n2. Fallback to national_average_cost \xD7 location_modifier\n\
+        3. Handle both material and labor modifiers\n\nCreate costCalculator.js service.\n"
+    - id: API001
+      prompt: 'Implement the /api/v1/estimates endpoint:
+
+        1. Accept: takeoffData, jobType, finishLevel, zipCode
+
+        2. Call Assembly Engine
+
+        3. Return itemized estimate
+
+
+        Follow the OpenAPI specification exactly.
+
+        '
+  implement_ar_scanning:
+    agent: ios-developer
+    description: Implement iOS AR scanning with frame sampling
+    tasks:
+    - id: IOS003
+      prompt: 'Implement RoomScanner class using RoomPlan:
+
+        1. Capture room geometry as USDZ
+
+        2. Sample frames every 0.5 seconds from ARSession.currentFrame
+
+        3. Keep maximum 15 frames
+
+        4. Package USDZ + frames for upload
+
+
+        Create both RoomScanner.swift and ScanResult.swift models.
+
+        '
+  integration_testing:
+    agent: integration-engineer
+    description: Create comprehensive integration tests
+    tasks:
+    - id: INT001
+      prompt: "Create end-to-end integration tests:\n1. Mock iOS scan data (USDZ +\
+        \ frames)\n2. Test Gemini analysis returns correct JSON structure\n3. Verify\
+        \ Assembly Engine calculations match expected values\n4. Test complete flow:\
+        \ scan \u2192 analysis \u2192 estimate\n\nUse Jest for testing framework.\n"
+  task_custom_160225:
+    agent: ios-developer
+    description: All of these tasks are deprecated. Analyze the GDo
+    tasks:
+    - context_files: []
+      deliverables: []
+      id: CUSTOM_160225
+      prompt: All of these tasks are deprecated. Analyze the GDocs directory to understand
+        the current direction.

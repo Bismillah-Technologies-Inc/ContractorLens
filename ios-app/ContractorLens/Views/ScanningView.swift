@@ -11,7 +11,7 @@ import simd
 struct ScanningView: View {
     @StateObject private var scanningService = ScanningService()
     @Environment(\.dismiss) private var dismiss
-    
+
     let projectName: String
     let onScanComplete: (ScanPackage) -> Void
 
@@ -76,11 +76,11 @@ class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureV
     var scanningService: ScanningService
     let projectName: String
     let onScanComplete: @escaping (ScanPackage) -> Void
-    
+
     private var finalRoom: CapturedRoom?
     private var capturedFrames: [Data] = []
     private let ciContext = CIContext()
-    
+
     private var frameCaptureTimer: Timer?
     private weak var arSession: ARSession?
     private let maxFramesToCapture = 20
@@ -114,7 +114,7 @@ class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureV
             frameCaptureTimer?.invalidate()
             return
         }
-        
+
         DispatchQueue.global(qos: .background).async {
             guard let imageData = self.processARFrameToJPEG(frame) else { return }
             DispatchQueue.main.async {
@@ -134,7 +134,7 @@ class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureV
     func captureSession(_ session: RoomCaptureSession, didAdd room: CapturedRoom) { self.finalRoom = room }
     func captureSession(_ session: RoomCaptureSession, didChange room: CapturedRoom) { self.finalRoom = room }
     func captureSession(_ session: RoomCaptureSession, didRemove room: CapturedRoom) { self.finalRoom = nil }
-    
+
     func captureSession(_ session: RoomCaptureSession, didProvide instruction: RoomCaptureSession.Instruction) {
         DispatchQueue.main.async { self.scanningService.currentInstruction = instruction.description }
     }
@@ -143,14 +143,14 @@ class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureV
         stopFrameCapture()
         DispatchQueue.main.async {
             self.scanningService.isScanning = false
-            if let error = error { 
-                self.scanningService.scanState = .failed(error); return 
+            if let error = error {
+                self.scanningService.scanState = .failed(error); return
             }
-            guard let finalRoom = self.finalRoom else { 
+            guard let finalRoom = self.finalRoom else {
                 let missingDataError = NSError(domain: "ContractorLens", code: -1, userInfo: [NSLocalizedDescriptionKey: "Scan completed but final room data is missing."])
                 self.scanningService.scanState = .failed(missingDataError); return
             }
-            
+
             let scanPackage = ScanPackage(projectName: self.projectName, capturedRoom: finalRoom, capturedFrames: self.capturedFrames)
             self.onScanComplete(scanPackage)
             self.scanningService.scanState = .completed
@@ -164,10 +164,10 @@ class RoomCaptureCoordinator: NSObject, RoomCaptureSessionDelegate, RoomCaptureV
             self.scanningService.scanState = .failed(error)
         }
     }
-    
-    func captureView(shouldPresent roomDataForProcessing: CapturedRoomData, error: Error?) -> Bool { 
+
+    func captureView(shouldPresent roomDataForProcessing: CapturedRoomData, error: Error?) -> Bool {
         startFrameCapture(arSession: roomDataForProcessing.arSession)
-        return true 
+        return true
     }
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) { self.finalRoom = processedResult }
 }

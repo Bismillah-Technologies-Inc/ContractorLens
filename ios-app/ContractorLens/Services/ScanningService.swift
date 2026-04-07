@@ -20,10 +20,10 @@ class ScanningService: ObservableObject {
     func startScanning() {
         guard !isScanning else { return }
         print("🔵 ScanningService: Start scanning requested.")
-        
+
         self.isScanning = true
         self.scanState = .scanning
-        
+
         let configuration = RoomCaptureSession.Configuration()
         roomCaptureView?.captureSession.run(configuration: configuration)
     }
@@ -44,6 +44,11 @@ class ScanningService: ObservableObject {
         self.scanState = .idle
         print("🔵 ScanningService: Scan state reset.")
     }
+
+    func retryScan() {
+        resetScan()
+        startScanning()
+    }
 }
 
 enum ScanState: Equatable {
@@ -59,12 +64,12 @@ enum ScanState: Equatable {
             return false
         }
     }
-    
+
     case idle
     case scanning
     case completed
     case failed(Error)
-    
+
     var description: String {
         switch self {
         case .idle:

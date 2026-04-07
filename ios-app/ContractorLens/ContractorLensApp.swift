@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct ContractorLensApp: App {
@@ -6,5 +7,6 @@ struct ContractorLensApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [Project.self, Room.self])
     }
 }

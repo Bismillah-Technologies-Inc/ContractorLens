@@ -1,11 +1,10 @@
-
 import SwiftUI
 import Combine
 
 struct ProjectDetailView: View {
     @Binding var project: Project
     @State private var showingScanningView = false
-    
+
     // States for managing the estimation process
     @StateObject private var assemblyService = AssemblyEngineService()
     @State private var estimationState: EstimationState = .idle
@@ -17,7 +16,7 @@ struct ProjectDetailView: View {
     enum EstimationState {
         case idle, processing, success, failed
     }
-    
+
     var body: some View {
         VStack {
             if project.scans.isEmpty {
@@ -34,9 +33,9 @@ struct ProjectDetailView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showingScanningView) { 
+        .fullScreenCover(isPresented: $showingScanningView) {
             // onDismiss
-        } content: { 
+        } content: {
             ScanningView(projectName: project.name) { scanPackage in
                 project.scans.insert(scanPackage, at: 0)
                 project.lastModified = Date()
@@ -60,7 +59,7 @@ struct ProjectDetailView: View {
             Text(errorMessage ?? "An unknown error occurred.")
         })
     }
-    
+
     private var scanListView: some View {
         List {
             Section(header: Text("Scans")) {
@@ -70,7 +69,7 @@ struct ProjectDetailView: View {
             }
         }
     }
-    
+
     private func scanRow(for scan: ScanPackage) -> some View {
         HStack {
             NavigationLink(destination: ScanDetailView(scan: scan)) {
@@ -83,7 +82,7 @@ struct ProjectDetailView: View {
                         Image(systemName: "camera.fill")
                             .frame(width: 60, height: 60).background(Color.gray.opacity(0.2)).cornerRadius(8)
                     }
-                    
+
                     VStack(alignment: .leading) {
                         Text("Scan from \(scan.timestamp, style: .time)")
                         Text("\(scan.capturedFrames.count) images").font(.caption).foregroundColor(.secondary)
@@ -103,7 +102,7 @@ struct ProjectDetailView: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -119,7 +118,7 @@ struct ProjectDetailView: View {
             Spacer()
         }
     }
-    
+
     private func startEstimateGeneration(for scan: ScanPackage) {
         // TODO: Build UI for the user to select these values.
         let selectedRoomType = RoomType.livingRoom
@@ -149,5 +148,35 @@ struct ProjectDetailView: View {
             self.generatedEstimate = estimate // Trigger the results sheet
         })
         .store(in: &cancellables)
+    }
+}
+
+struct RoomNameInputView: View {
+    @Binding var isPresented: Bool
+    @State private var roomName = ""
+    var onSubmit: (String) -> Void
+
+    var body: some View {
+        NavigationView {
+            Form {
+                TextField("Room Name (e.g., Kitchen)", text: $roomName)
+            }
+            .navigationTitle("New Room")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Scan") {
+                        onSubmit(roomName)
+                        isPresented = false
+                    }
+                    .disabled(roomName.isEmpty)
+                }
+            }
+        }
     }
 }
