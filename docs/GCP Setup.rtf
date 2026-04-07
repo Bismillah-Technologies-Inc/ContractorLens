@@ -1,0 +1,116 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Bold;\f1\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red227\green176\blue255;\red116\green116\blue116;
+}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c91743\c75738\c100000;\csgenericrgb\c45371\c45371\c45371;
+}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs22 \cf2 \CocoaLigature0 Summary of GCP Setup
+\f1\b0 \
+\
+  Our primary goal was to create two isolated environments, \cf3 production\cf2  and \cf3 development\cf2 , to ensure a professional and reliable workflow (Dev/Prod Parity).\
+\
+  \cf4 ---\cf2 \
+\
+  
+\f0\b 1. Production Environment (\cf3 contractorlens-production\cf2 )
+\f1\b0 \
+\
+  This environment is intended for your live, user-facing application.\
+\
+   * 
+\f0\b Project:
+\f1\b0  We created a dedicated Google Cloud project named \cf3 contractorlens-production\cf2 .\
+   * 
+\f0\b Billing:
+\f1\b0  The project is linked to your billing account (\cf3 014829-647CEB-868D4D\cf2 ).\
+\
+  This environment is currently a clean slate, ready for you to deploy your production-ready application. We have not yet enabled APIs or created database resources here, which we would do when you\
+  are ready for your first production deployment.\
+\
+  \cf4 ---\cf2 \
+\
+  
+\f0\b 2. Development Environment (\cf3 contractorlens-development\cf2 )
+\f1\b0 \
+\
+  This environment is an analogue of production, designed for all your development and testing needs.\
+\
+   * 
+\f0\b Project:
+\f1\b0  We created a second GCP project named \cf3 contractorlens-development\cf2 .\
+   * 
+\f0\b Billing:
+\f1\b0  This project is also linked to your billing account.\
+   * 
+\f0\b Enabled APIs:
+\f1\b0  We enabled a suite of essential APIs required to run a modern application:\
+       * 
+\f0\b Cloud Run API:
+\f1\b0  To run your containerized backend service.\
+       * 
+\f0\b Artifact Registry API:
+\f1\b0  To store your container images.\
+       * 
+\f0\b Cloud Build API:
+\f1\b0  To automate the building of your container images.\
+       * 
+\f0\b Cloud SQL Admin API:
+\f1\b0  To manage your database.\
+       * 
+\f0\b Secret Manager API:
+\f1\b0  To handle sensitive data like passwords.\
+       * 
+\f0\b Compute Engine & Service Networking APIs:
+\f1\b0  These were enabled to set up the private network for your database.\
+\
+   * 
+\f0\b Private Networking:
+\f1\b0  To comply with a security policy on your account, we configured a secure, private network for your database:\
+       * We created a Virtual Private Cloud (VPC) network named \cf3 contractorlens-dev-vpc\cf2 .\
+       * We established a private service connection, allowing your Cloud SQL database to communicate within this VPC without being exposed to the public internet.\
+\
+   * 
+\f0\b Development Database:
+\f1\b0 \
+       * 
+\f0\b Instance:
+\f1\b0  We launched a Cloud SQL for PostgreSQL instance named \cf3 contractorlens-db-dev\cf2 .\
+           * It runs 
+\f0\b PostgreSQL 14
+\f1\b0  on a cost-effective \cf3 db-g1-small\cf2  machine type.\
+           * It is configured to be accessible only from within your private \cf3 contractorlens-dev-vpc\cf2  network.\
+       * 
+\f0\b Database:
+\f1\b0  Inside the instance, we created a database named \cf3 contractorlens\cf2 .\
+       * 
+\f0\b User:
+\f1\b0  We created a database user with the following credentials. 
+\f0\b Please ensure you have saved the password.
+\f1\b0 \
+           * 
+\f0\b Username:
+\f1\b0  \cf3 contractorlens_dev_user\cf2 \
+           * 
+\f0\b Password:
+\f1\b0  \cf3 !ChangeMe123!\cf2 \
+\
+   * 
+\f0\b Secret Management:
+\f1\b0 \
+       * We created a secret in Secret Manager named \cf3 DB_PASSWORD_DEV\cf2  which securely holds the password for your development database. Your Cloud Run application will be configured to fetch this secret\
+         at runtime.\
+\
+  \cf4 ---\cf2 \
+\
+  
+\f0\b Current State & Next Steps
+\f1\b0 \
+\
+  You now have a robust, two-tiered infrastructure. Your local \cf3 gcloud\cf2  CLI is configured to switch between these two projects, allowing you to manage and deploy to each environment independently.\
+\
+  The next logical step would be to analyze your application's codebase to determine if any other cloud services are needed (like Cloud Storage for file uploads) and then proceed with deploying your\
+  application to the \cf3 contractorlens-development\cf2  environment for testing.\
+}

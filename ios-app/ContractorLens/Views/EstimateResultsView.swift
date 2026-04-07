@@ -1,155 +1,165 @@
 import SwiftUI
 
+/// A view that displays the detailed cost estimate or a confirmation of the saved scan.
 struct EstimateResultsView: View {
-    @StateObject private var viewModel = EstimateViewModel()
-    let scanResult: RoomScanResult
-    @Environment(\.dismiss) private var dismiss
     
-    @State private var showingChat = false
+    // The estimate data, if available.
+    let estimate: Estimate?
+    // The scan result, for context.
+    let scanResult: RoomScanResult?
+    
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
-            ZStack {
-                if viewModel.isLoading {
-                    loadingView
-                } else if let estimate = viewModel.currentEstimate {
-                    estimateContentView(estimate)
-                } else if viewModel.hasError {
-                    errorView
+            Group {
+                if let estimate = estimate {
+                    EstimateDetailView(estimate: estimate)
+                } else {
+                    // Fallback to "Scan Saved" if no estimate is passed (offline mode)
+                    ScanSavedView()
                 }
             }
-            .navigationTitle("Estimate")
+            .navigationTitle(estimate != nil ? "Estimate Details" : "Scan Complete")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }
-            .onAppear {
-                if viewModel.currentEstimate == nil {
-                    // In a real app, this would trigger a network request
-                    // For now, it uses a mock data generator that needs to be updated
-                    // viewModel.generateEstimateWithGeminiAnalysis(from: scanResult)
-                }
-            }
         }
-    }
-    
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.5)
-            Text("Analyzing Scan & Generating V2 Estimate...")
-                .font(.headline)
-        }
-    }
-    
-    private var errorView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.orange)
-            Text("Unable to Generate Estimate")
-                .font(.title2)
-            Button("Retry") { /* viewModel.retry(with: scanResult) */ }
-        }
-    }
-    
-    private func estimateContentView(_ estimate: Estimate) -> some View {
-        List {
-            Section {
-                totalCostHeaderView(estimate)
-            }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-
-            ForEach(estimate.csiDivisions) { division in
-                Section(header: Text("\(division.csiCode) - \(division.divisionName)").font(.headline)) {
-                    ForEach(division.lineItems) { item in
-                        LineItemRowV2(item: item)
-                    }
-                }
-            }
-        }
-        .listStyle(InsetGroupedListStyle())
-    }
-    
-    private func totalCostHeaderView(_ estimate: Estimate) -> some View {
-        VStack(spacing: 16) {
-            VStack {
-                Text("Total Estimated Cost")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Text(estimate.grandTotal, format: .currency(code: "USD"))
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-            }
-            
-            Text("Generated: \(estimate.metadata.calculationDate)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
     }
 }
 
-struct LineItemRowV2: View {
-    let item: LineItem
-    @State private var isExpanded = false
+// MARK: - Subviews
 
+struct ScanSavedView: View {
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.description)
-                        .fontWeight(.medium)
-                    Text("\(item.quantity.formatted()) \(item.unit) @ \(item.unitCost, format: .currency(code: "USD"))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
-                Text(item.totalCost, format: .currency(code: "USD"))
-                    .fontWeight(.semibold)
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.green)
+            
+            VStack(spacing: 12) {
+                Text("Scan Saved Successfully")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                
+                Text("Your scan data has been saved to the device.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation {
-                    isExpanded.toggle()
-                }
-            }
+            Spacer()
+            Spacer()
+        }
+        .padding()
+    }
+}
 
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    Divider()
-                    if let manufacturer = item.manufacturer {
-                        detailRow(label: "Manufacturer", value: "\(manufacturer) \(item.modelNumber ?? "")")
-                    }
-                    if let specs = item.specifications {
-                        detailRow(label: "Size", value: specs.sizeDimensions ?? "N/A")
-                    }
-                    if let labor = item.laborDetails {
-                        detailRow(label: "Labor Breakdown", value: "\(labor.totalHours.formatted()) hrs (\(labor.baseHours.formatted()) base + adjustments)")
-                    }
-                    if let quantity = item.quantityDetails {
-                        detailRow(label: "Material Quantity", value: "\(quantity.totalQuantity.formatted()) total (\(quantity.baseQuantity.formatted()) base + waste)")
+struct EstimateDetailView: View {
+    let estimate: Estimate
+    
+    var body: some View {
+        List {
+            // Header Section
+            Section {
+                HStack {
+                    Text("Grand Total")
+                        .font(.headline)
+                    Spacer()
+                    Text(formatCurrency(estimate.grandTotal))
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                }
+                
+                MetadataRow(label: "Finish Level", value: estimate.metadata.finishLevel.capitalized)
+                MetadataRow(label: "Total Labor Hours", value: String(format: "%.1f hrs", estimate.metadata.totalLaborHours))
+            }
+            
+            // CSI Divisions
+            ForEach(estimate.csiDivisions) { division in
+                Section(header: Text("\(division.csiCode) - \(division.divisionName)")) {
+                    DisclosureGroup {
+                        ForEach(division.lineItems) { item in
+                            LineItemRow(item: item)
+                        }
+                    } label: {
+                        HStack {
+                            Text("Division Total")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(formatCurrency(division.totalCost))
+                                .fontWeight(.semibold)
+                        }
                     }
                 }
-                .padding(.top, 8)
             }
         }
-        .padding(.vertical, 8)
     }
+    
+    private func formatCurrency(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+    }
+}
 
-    private func detailRow(label: String, value: String) -> some View {
+struct MetadataRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
         HStack {
             Text(label)
-                .font(.caption)
                 .foregroundColor(.secondary)
             Spacer()
             Text(value)
-                .font(.caption)
                 .fontWeight(.medium)
         }
     }
+}
+
+struct LineItemRow: View {
+    let item: LineItem
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(item.description)
+                    .font(.body)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(String(format: "$%.2f", item.totalCost))
+            }
+            
+            HStack {
+                Text("\(String(format: "%.2f", item.quantity)) \(item.unit)")
+                Spacer()
+                Text("\(item.type.capitalized)")
+                    .font(.caption)
+                    .padding(4)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(4)
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            
+            if let specs = item.specifications {
+                Text("\(item.manufacturer ?? "") \(specs.modelNumber ?? "")")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+#Preview {
+    EstimateResultsView(estimate: nil, scanResult: nil)
 }

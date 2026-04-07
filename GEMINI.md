@@ -12,32 +12,30 @@ The overall architecture is designed to separate concerns: the iOS app handles d
 
 ## Architecture and Data Flow
 
-The core workflow is implemented with a high degree of correctness, adhering to the best practices of each platform.
+The core workflow is implemented with a high degree of correctness, adhering to the best practices of each platform. The architecture is now an offline-first, project-based system that ensures data integrity and a smooth user experience.
 
-1.  **iOS: Scanning & Data Capture:**
-    *   The user initiates a scan, which is managed by the `RoomScanner.swift` class. This class correctly implements the `RoomCaptureSessionDelegate` pattern to receive data from Apple's **RoomPlan** framework.
-    *   The `ScanningView.swift` uses a `UIViewRepresentable` to correctly bridge the UIKit-based `RoomCaptureView` into the modern **SwiftUI** interface.
-    *   The entire UI is built with SwiftUI and follows the MVVM (Model-View-ViewModel) pattern. ViewModels (`@ObservableObject`) use `@Published` properties and the `@MainActor` attribute to ensure thread-safe, reactive UI updates.
+1.  **iOS: Project Management**:
+    *   The app launches to the `ContentView`, which displays a list of saved `Projects`.
+    *   Users can create new projects or select an existing one to view its details.
 
-2.  **iOS to Backend: API Request:**
-    *   Upon scan completion, the `EstimateViewModel.swift` creates a `Codable` Swift struct (`EstimateRequestPayload`). This struct is encoded into a JSON payload, ensuring a type-safe and accurate data contract with the backend.
-    *   The payload, containing key image frames (as Base64 strings) and room dimensions, is sent to the **Backend**'s `/generate` endpoint.
+2.  **iOS: Scanning & Data Capture**:
+    *   From the `ProjectDetailView`, the user initiates a scan.
+    *   The `ScanningView` is presented, which uses a `UIViewRepresentable` to correctly bridge the UIKit-based `RoomCaptureView` into the modern **SwiftUI** interface.
+    *   All session management is handled by `RoomCaptureCoordinator`, which serves as the single delegate for the `RoomPlan` session and its underlying `ARSession`.
+    *   During the scan, the coordinator intelligently captures high-quality still image frames on a background thread to be used for AI analysis.
 
-3.  **Backend & ML Service: Analysis:**
-    *   The **Backend**'s main `server.js` file acts as an orchestrator. It uses a standard middleware pattern (e.g., `helmet`, `cors`, custom auth) in the correct order.
-    *   The request is forwarded to the **Gemini ML Service**.
-    *   The `analyzer.js` in the ML service correctly uses the `@google/generative-ai` library to create a multimodal request, combining the text-based prompt with the image data.
-    *   The ML service returns a structured JSON object to the Backend, containing a list of identified construction assemblies and their quantities (e.g., `[{ "assemblyName": "Ceramic Tile Flooring", "quantity": 120, "unit": "SF" }]`).
+3.  **iOS: Offline Caching**:
+    *   Upon scan completion, the `RoomCaptureCoordinator` bundles the `CapturedRoom` 3D model data and the captured image stills into a `ScanPackage` object.
+    *   This package is added to the current `Project` object, which is then saved to the device's local storage via the `ProjectPersistenceService`.
+    *   This offline-first approach prevents data loss and allows the user to complete scans without an active internet connection.
 
-4.  **Backend: Estimate Calculation:**
-    *   The **Assembly Engine** (`assemblyEngine.js`) receives the structured list from the ML service.
-    *   Database connections are managed efficiently and correctly via a single, shared connection pool configured in `config/database.js`, following `node-postgres` best practices.
-    *   For each item in the list, the engine queries the PostgreSQL database to find the corresponding assembly and its constituent line items (materials, labor).
-    *   The engine calculates the cost for each line item, applies a location-based cost modifier, groups the items by trade, and prepares the final estimate.
+4.  **iOS: Viewing Results**:
+    *   The user can navigate from the project list to a `ProjectDetailView` to see all scans for a project.
+    *   Tapping a scan opens the `ScanDetailView`, which presents a detailed, contractor-focused report including individual dimensions for each wall, floor, door, and window, as well as a gallery of the captured images.
 
-5.  **Backend to iOS: API Response:**
-    *   The final, detailed estimate is sent back to the iOS app as a single JSON object.
-    *   The iOS app's `APIService` decodes this JSON back into its `Codable` `Estimate` structs, and the `EstimateResultsView.swift` reactively updates to display the results.
+5.  **Backend & ML Service: Analysis (Conceptual)**:
+    *   In a future step, a mechanism will be added to upload the saved `ScanPackage` files to the backend.
+    *   The backend will then use the `Gemini ML Service` to analyze the images and the `Assembly Engine` to generate a cost estimate.
 
 ## Strategic Position & Implementation Status
 

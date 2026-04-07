@@ -115,26 +115,46 @@ class AssemblyEngineService: ObservableObject {
         location: LocationData
     ) throws -> EnhancedEstimateRequest {
         
+        // 1. Prepare Frames
         let framePayloads = scanPackage.capturedFrames.map {
-            FramePayload(imageData: $0.base64EncodedString(), timestamp: ISO8601DateFormatter().string(from: Date()))
+            FramePayload(
+                timestamp: ISO8601DateFormatter().string(from: Date()), // Ideally use actual capture time if available
+                imageData: $0.base64EncodedString(),
+                lightingConditions: nil // Capture lighting if available in metadata
+            )
         }
         
         guard !framePayloads.isEmpty else {
             throw ServiceError.invalidData("Scan package contains no image frames.")
         }
         
+        // 2. Prepare Dimensions & Takeoff Data
         let dimensions = calculateDimensions(from: scanPackage.capturedRoom)
+        let totalArea = dimensions.length * dimensions.width // Simple floor area approximation
         
-        let dimensionsPayload = RoomDimensionsPayload(length: dimensions.length, width: dimensions.width, height: dimensions.height)
-        let locationPayload = LocationPayload(zip: location.zipCode)
-        let userPrefsPayload = UserPreferencesPayload(qualityTier: userPreferences.qualityTier, budget: nil)
+        let dimensionsPayload = RoomDimensionsPayload(
+            length: dimensions.length,
+            width: dimensions.width,
+            height: dimensions.height,
+            totalArea: totalArea
+        )
         
-        return EnhancedEstimateRequest(
-            frames: framePayloads,
+        // 3. Prepare EnhancedScanData (Nested Object)
+        let enhancedScanData = EnhancedScanData(
+            scanId: scanPackage.id.uuidString,
             roomType: roomType.rawValue,
             dimensions: dimensionsPayload,
-            location: locationPayload,
-            userPreferences: userPrefsPayload
+            frames: framePayloads,
+            takeoffData: nil // TODO: Populate from RoomPlan surface data if needed for higher precision
+        )
+        
+        // 4. Construct Final Request
+        // Map "qualityTier" (good/better/best) to "finishLevel" as expected by backend
+        return EnhancedEstimateRequest(
+            enhancedScanData: enhancedScanData,
+            finishLevel: userPreferences.qualityTier,
+            zipCode: location.zipCode,
+            fallbackToBasic: true
         )
     }
 

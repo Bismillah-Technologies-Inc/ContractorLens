@@ -11,7 +11,16 @@
 		1D0D2C6E2E6BB943006EF06D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0D2C6D2E6BB943006EF06D /* Theme.swift */; };
 		1D0D2C752E6E9902006EF06D /* ItemCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0D2C732E6E9902006EF06D /* ItemCategory.swift */; };
 		1D0D2C762E6E9902006EF06D /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0D2C742E6E9902006EF06D /* UserPreferences.swift */; };
+		1D13D7372E7BC340000E7992 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D13D7362E7BC340000E7992 /* Configuration.swift */; };
+		1D13D7392E7BC34C000E7992 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D13D7382E7BC34C000E7992 /* APIModels.swift */; };
+		1D13D73C2E7BC5E1000E7992 /* ScanDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D13D73A2E7BC5E1000E7992 /* ScanDetailView.swift */; };
+		1D13D73D2E7BC5E1000E7992 /* ScanProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D13D73B2E7BC5E1000E7992 /* ScanProcessingView.swift */; };
 		1D548C4B2E6BA7DC00FBE3BA /* RoomScanResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D548C4A2E6BA7DC00FBE3BA /* RoomScanResult.swift */; };
+		1D9185EE2E7A518100DB96F6 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9185ED2E7A518100DB96F6 /* Project.swift */; };
+		1D9185F12E7A519D00DB96F6 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9185EF2E7A519D00DB96F6 /* ProjectDetailView.swift */; };
+		1D9185F42E7A51DB00DB96F6 /* ScanPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9185F32E7A51DB00DB96F6 /* ScanPackage.swift */; };
+		1D9185F62E7A51FD00DB96F6 /* ProjectPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9185F52E7A51FD00DB96F6 /* ProjectPersistenceService.swift */; };
+		1D9185F82E7A521100DB96F6 /* CreateNewProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9185F72E7A521100DB96F6 /* CreateNewProjectView.swift */; };
 		A1000001294A0001005F0001 /* ContractorLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000294A0001005F0001 /* ContractorLensApp.swift */; };
 		A1000003294A0001005F0001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002294A0001005F0001 /* ContentView.swift */; };
 		A1000005294A0003005F0001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000004294A0003005F0001 /* Assets.xcassets */; };
@@ -22,9 +31,7 @@
 		A1000016294A0013005F0001 /* Surface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000015294A0013005F0001 /* Surface.swift */; };
 		A1000018294A0014005F0001 /* ScanningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000017294A0014005F0001 /* ScanningView.swift */; };
 		A100001A294A0015005F0001 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000019294A0015005F0001 /* ResultsView.swift */; };
-		A100001C294A0016005F0001 /* ScanningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001B294A0016005F0001 /* ScanningViewModel.swift */; };
 		A100001E294A0017005F0001 /* AssemblyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001D294A0017005F0001 /* AssemblyViewModel.swift */; };
-		A1000020294A0018005F0001 /* ARService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001F294A0018005F0001 /* ARService.swift */; };
 		A1000022294A0019005F0001 /* AssemblyEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021294A0019005F0001 /* AssemblyEngineService.swift */; };
 		A1000024294A001A005F0001 /* RoomScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000023294A001A005F0001 /* RoomScanner.swift */; };
 		A1000026294A001B005F0001 /* ARCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000025294A001B005F0001 /* ARCoordinator.swift */; };
@@ -39,7 +46,16 @@
 		1D0D2C6D2E6BB943006EF06D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		1D0D2C732E6E9902006EF06D /* ItemCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCategory.swift; sourceTree = "<group>"; };
 		1D0D2C742E6E9902006EF06D /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
+		1D13D7362E7BC340000E7992 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
+		1D13D7382E7BC34C000E7992 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
+		1D13D73A2E7BC5E1000E7992 /* ScanDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanDetailView.swift; sourceTree = "<group>"; };
+		1D13D73B2E7BC5E1000E7992 /* ScanProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanProcessingView.swift; sourceTree = "<group>"; };
 		1D548C4A2E6BA7DC00FBE3BA /* RoomScanResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomScanResult.swift; sourceTree = "<group>"; };
+		1D9185ED2E7A518100DB96F6 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		1D9185EF2E7A519D00DB96F6 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		1D9185F32E7A51DB00DB96F6 /* ScanPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPackage.swift; sourceTree = "<group>"; };
+		1D9185F52E7A51FD00DB96F6 /* ProjectPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPersistenceService.swift; sourceTree = "<group>"; };
+		1D9185F72E7A521100DB96F6 /* CreateNewProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewProjectView.swift; sourceTree = "<group>"; };
 		A0FFFFFD294A0001005F0001 /* ContractorLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ContractorLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000000294A0001005F0001 /* ContractorLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorLensApp.swift; sourceTree = "<group>"; };
 		A1000002294A0001005F0001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -51,9 +67,7 @@
 		A1000015294A0013005F0001 /* Surface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Surface.swift; sourceTree = "<group>"; };
 		A1000017294A0014005F0001 /* ScanningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningView.swift; sourceTree = "<group>"; };
 		A1000019294A0015005F0001 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
-		A100001B294A0016005F0001 /* ScanningViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningViewModel.swift; sourceTree = "<group>"; };
 		A100001D294A0017005F0001 /* AssemblyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyViewModel.swift; sourceTree = "<group>"; };
-		A100001F294A0018005F0001 /* ARService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARService.swift; sourceTree = "<group>"; };
 		A1000021294A0019005F0001 /* AssemblyEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyEngineService.swift; sourceTree = "<group>"; };
 		A1000023294A001A005F0001 /* RoomScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomScanner.swift; sourceTree = "<group>"; };
 		A1000025294A001B005F0001 /* ARCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCoordinator.swift; sourceTree = "<group>"; };
@@ -94,6 +108,7 @@
 		A0FFFFFF294A0001005F0001 /* ContractorLens */ = {
 			isa = PBXGroup;
 			children = (
+				1D13D7362E7BC340000E7992 /* Configuration.swift */,
 				A1000030294A001D005F0001 /* Info.plist */,
 				A1000000294A0001005F0001 /* ContractorLensApp.swift */,
 				A100000E294A000F005F0001 /* Models */,
@@ -119,6 +134,10 @@
 		A1000009294A0009005F0001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				1D13D73A2E7BC5E1000E7992 /* ScanDetailView.swift */,
+				1D13D73B2E7BC5E1000E7992 /* ScanProcessingView.swift */,
+				1D9185F72E7A521100DB96F6 /* CreateNewProjectView.swift */,
+				1D9185EF2E7A519D00DB96F6 /* ProjectDetailView.swift */,
 				A1000002294A0001005F0001 /* ContentView.swift */,
 				A1000017294A0014005F0001 /* ScanningView.swift */,
 				A1000019294A0015005F0001 /* ResultsView.swift */,
@@ -130,7 +149,6 @@
 		A100000A294A000A005F0001 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				A100001B294A0016005F0001 /* ScanningViewModel.swift */,
 				A100001D294A0017005F0001 /* AssemblyViewModel.swift */,
 				A100002B294A001F005F0001 /* EstimateViewModel.swift */,
 			);
@@ -140,7 +158,7 @@
 		A100000B294A000B005F0001 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A100001F294A0018005F0001 /* ARService.swift */,
+				1D9185F52E7A51FD00DB96F6 /* ProjectPersistenceService.swift */,
 				A1000021294A0019005F0001 /* AssemblyEngineService.swift */,
 				A1000029294A001E005F0001 /* ScanningService.swift */,
 			);
@@ -169,6 +187,9 @@
 		A100000E294A000F005F0001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1D13D7382E7BC34C000E7992 /* APIModels.swift */,
+				1D9185F32E7A51DB00DB96F6 /* ScanPackage.swift */,
+				1D9185ED2E7A518100DB96F6 /* Project.swift */,
 				1D0D2C732E6E9902006EF06D /* ItemCategory.swift */,
 				1D0D2C742E6E9902006EF06D /* UserPreferences.swift */,
 				1D548C4A2E6BA7DC00FBE3BA /* RoomScanResult.swift */,
@@ -254,25 +275,32 @@
 				A1000010294A0010005F0001 /* Room.swift in Sources */,
 				A1000012294A0011005F0001 /* Measurement.swift in Sources */,
 				A1000014294A0012005F0001 /* Assembly.swift in Sources */,
+				1D13D73C2E7BC5E1000E7992 /* ScanDetailView.swift in Sources */,
+				1D13D73D2E7BC5E1000E7992 /* ScanProcessingView.swift in Sources */,
 				A1000016294A0013005F0001 /* Surface.swift in Sources */,
 				A1000003294A0001005F0001 /* ContentView.swift in Sources */,
 				A1000018294A0014005F0001 /* ScanningView.swift in Sources */,
 				1D0D2C6E2E6BB943006EF06D /* Theme.swift in Sources */,
 				A100001A294A0015005F0001 /* ResultsView.swift in Sources */,
-				A100001C294A0016005F0001 /* ScanningViewModel.swift in Sources */,
 				A100001E294A0017005F0001 /* AssemblyViewModel.swift in Sources */,
-				A1000020294A0018005F0001 /* ARService.swift in Sources */,
 				A1000022294A0019005F0001 /* AssemblyEngineService.swift in Sources */,
 				A1000024294A001A005F0001 /* RoomScanner.swift in Sources */,
 				A1000026294A001B005F0001 /* ARCoordinator.swift in Sources */,
+				1D9185F62E7A51FD00DB96F6 /* ProjectPersistenceService.swift in Sources */,
 				1D0D2C752E6E9902006EF06D /* ItemCategory.swift in Sources */,
 				1D0D2C762E6E9902006EF06D /* UserPreferences.swift in Sources */,
+				1D9185F42E7A51DB00DB96F6 /* ScanPackage.swift in Sources */,
 				A1000028294A001C005F0001 /* Extensions.swift in Sources */,
 				A100002A294A001E005F0001 /* ScanningService.swift in Sources */,
 				A100002C294A001F005F0001 /* EstimateViewModel.swift in Sources */,
 				A100002E294A0020005F0001 /* EstimateResultsView.swift in Sources */,
+				1D13D7372E7BC340000E7992 /* Configuration.swift in Sources */,
 				A1000001294A0001005F0001 /* ContractorLensApp.swift in Sources */,
+				1D9185F12E7A519D00DB96F6 /* ProjectDetailView.swift in Sources */,
+				1D13D7392E7BC34C000E7992 /* APIModels.swift in Sources */,
 				1D548C4B2E6BA7DC00FBE3BA /* RoomScanResult.swift in Sources */,
+				1D9185EE2E7A518100DB96F6 /* Project.swift in Sources */,
+				1D9185F82E7A521100DB96F6 /* CreateNewProjectView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,7 +360,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -390,7 +418,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -425,7 +453,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportsDocumentBrowser = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -467,7 +495,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportsDocumentBrowser = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

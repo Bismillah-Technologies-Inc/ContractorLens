@@ -11,9 +11,11 @@ yarn-error.log
 !/.env.example
 
 # Xcode
-*.xcuserdatad/
-xcuserdata/
 DerivedData/
 
 # Media files
 *.MP4
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
